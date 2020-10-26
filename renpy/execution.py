@@ -348,20 +348,13 @@ class Context(renpy.object.Object):
 
         store = renpy.store.__dict__
 
-        if context:
-            index = 0
-        else:
-            index = -1
-
+        index = 0 if context else -1
         for i in names:
 
             if i in self.dynamic_stack[index]:
                 continue
 
-            if i in store:
-                self.dynamic_stack[index][i] = store[i]
-            else:
-                self.dynamic_stack[index][i] = Delete()
+            self.dynamic_stack[index][i] = store[i] if i in store else Delete()
 
     def pop_dynamic(self):
         """

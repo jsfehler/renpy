@@ -120,10 +120,7 @@ def exists():
     Returns true if a controller exists, and False otherwise.
     """
 
-    if controllers:
-        return True
-    else:
-        return False
+    return bool(controllers)
 
 
 def quit(index):  # @ReservedAssignment
@@ -185,11 +182,7 @@ def event(ev):
 
     elif ev.type in (CONTROLLERBUTTONDOWN, CONTROLLERBUTTONUP):
 
-        if ev.type == CONTROLLERBUTTONDOWN:
-            pr = "press"
-        else:
-            pr = "release"
-
+        pr = "press" if ev.type == CONTROLLERBUTTONDOWN else "release"
         name = "pad_{}_{}".format(get_string_for_button(ev.button), pr)
         ev = make_event(name)
 

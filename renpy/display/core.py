@@ -421,10 +421,7 @@ class Displayable(renpy.object.Object):
         if self.style != o.style:
             return False
 
-        if self.default != o.default:
-            return False
-
-        return True
+        return self.default == o.default
 
     def __unicode__(self):
         return self.__class__.__name__
@@ -862,8 +859,6 @@ class SceneLists(renpy.object.Object):
 
             self.replace_transient(prefix=None)
 
-            self.focused = None
-
             self.drag_group = oldsl.drag_group
 
             self.layer_transform.update(oldsl.layer_transform)
@@ -875,7 +870,8 @@ class SceneLists(renpy.object.Object):
                 self.layer_at_list[i] = (None, [ ])
 
             self.music = None
-            self.focused = None
+
+        self.focused = None
 
     def replace_transient(self, prefix="hide"):
         """
@@ -906,11 +902,7 @@ class SceneLists(renpy.object.Object):
         like lambdas.)
         """
 
-        for i in renpy.config.transient_layers:
-            if self.layers[i]:
-                return False
-
-        return True
+        return not any(self.layers[i] for i in renpy.config.transient_layers)
 
     def transform_state(self, old_thing, new_thing, execution=False):
         """
@@ -962,12 +954,13 @@ class SceneLists(renpy.object.Object):
 
         for i, sle in enumerate(self.layers[layer]):
 
-            if remove_index is None:
-                if (sle.tag and sle.tag == tag) or sle.displayable == tag:
-                    remove_index = i
+            if remove_index is None and (
+                (sle.tag and sle.tag == tag) or sle.displayable == tag
+            ):
+                remove_index = i
 
-                    if zorder is None:
-                        zorder = sle.zorder
+                if zorder is None:
+                    zorder = sle.zorder
 
         if zorder is None:
             zorder = renpy.config.tag_zorder.get(tag, 0)
@@ -1075,15 +1068,13 @@ class SceneLists(renpy.object.Object):
                 thing = self.transform_state(l[remove_index].displayable, thing)
 
             thing.set_transform_event("replace")
-            thing._show()
-
         else:
 
             if not isinstance(thing, renpy.display.motion.Transform):
                 thing = self.transform_state(default_transform, thing)
 
             thing.set_transform_event("show")
-            thing._show()
+        thing._show()
 
         sle = SceneListEntry(key, zorder, st, at, thing, name)
         l.insert(add_index, sle)
@@ -1112,9 +1103,11 @@ class SceneLists(renpy.object.Object):
         st = oldsle.show_time or now
         at = oldsle.animation_time or now
 
-        if renpy.config.fast_unhandled_event:
-            if not oldsle.displayable._handles_event(prefix):
-                prefix = None
+        if (
+            renpy.config.fast_unhandled_event
+            and not oldsle.displayable._handles_event(prefix)
+        ):
+            prefix = None
 
         if (prefix is not None) and oldsle.tag:
 
@@ -1171,9 +1164,8 @@ class SceneLists(renpy.object.Object):
 
             sle = self.layers[layer][i]
 
-            if thing:
-                if sle.tag == thing or sle.displayable == thing:
-                    break
+            if thing and (sle.tag == thing or sle.displayable == thing):
+                break
 
             if sle.tag and "$" in sle.tag:
                 continue
@@ -1320,7 +1312,7 @@ class SceneLists(renpy.object.Object):
         replaced_tag = "replaced$" + tag
 
         l = self.layers[layer]
-        self.layers[layer] = [ i for i in l if i.tag != hide_tag and i.tag != replaced_tag ]
+        self.layers[layer] = [i for i in l if i.tag not in [hide_tag, replaced_tag]]
 
     def remove_hidden(self):
         """
@@ -1362,10 +1354,8 @@ class SceneLists(renpy.object.Object):
 
             for sle in self.layers[l]:
 
-                if sle.tag:
-
-                    if "$" in sle.tag:
-                        continue
+                if sle.tag and "$" in sle.tag:
+                    continue
 
                 newl.append(sle)
 
@@ -1419,16 +1409,8 @@ class SceneLists(renpy.object.Object):
 
         now = get_time()
 
-        if sle.show_time is not None:
-            st = now - sle.show_time
-        else:
-            st = 0
-
-        if sle.animation_time is not None:
-            at = now - sle.animation_time
-        else:
-            at = 0
-
+        st = now - sle.show_time if sle.show_time is not None else 0
+        at = now - sle.animation_time if sle.animation_time is not None else 0
         surf = renpy.display.render.render_for_size(sle.displayable, width, height, st, at)
 
         sw = surf.width
@@ -1456,11 +1438,7 @@ class MouseMove(object):
     def __init__(self, x, y, duration):
         self.start = get_time()
 
-        if duration is not None:
-            self.duration = duration
-        else:
-            self.duration = 0
-
+        self.duration = duration if duration is not None else 0
         self.start_x, self.start_y = renpy.display.draw.get_mouse_pos()
 
         self.end_x = x
@@ -1502,11 +1480,7 @@ def get_safe_mode():
             VK_SHIFT = 0x10
 
             ctypes.windll.user32.GetKeyState.restype = ctypes.c_ushort
-            if ctypes.windll.user32.GetKeyState(VK_SHIFT) & 0x8000:
-                return True
-            else:
-                return False
-
+            return bool(ctypes.windll.user32.GetKeyState(VK_SHIFT) & 0x8000)
         # Safe mode doesn't work on other platforms.
         return False
 
@@ -1851,7 +1825,7 @@ class Interface(object):
                     )
 
             else:
-                self.layer_properties[layer] = dict()
+                self.layer_properties[layer] = {}
 
         # A stack giving the values of self.transition and self.transition_time
         # for contexts outside the current one. This is used to restore those

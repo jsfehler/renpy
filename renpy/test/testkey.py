@@ -294,11 +294,7 @@ def get_keycode(node, keysym):
     key = "_".join(c)
 
     if key in unicode_to_code:
-        if ord(key) >= 32:
-            u = key
-        else:
-            u = None
-
+        u = key if ord(key) >= 32 else None
         code = unicode_to_code[key]
 
     elif key.lower() in unicode_to_code:
@@ -314,11 +310,8 @@ def get_keycode(node, keysym):
 
         u = code_to_unicode.get(code, "")
 
-        if not u:
+        if not u or ord(u) < 32:
             u = None
-        elif ord(u) < 32:
-            u = None
-
     return code, u, mods
 
 

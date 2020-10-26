@@ -191,10 +191,7 @@ def public_api():
 del public_api
 
 # The number of bits in the architecture.
-if sys.maxsize > (2 << 32):
-    bits = 64
-else:
-    bits = 32
+bits = 64 if sys.maxsize > (2 << 32) else 32
 
 
 def roll_forward_info():
@@ -589,11 +586,7 @@ def predict_show(name, layer=None, what=None, tag=None, at_list=[ ]):
             return
 
     for i in at_list:
-        if isinstance(i, renpy.display.motion.Transform):
-            img = i(child=img)
-        else:
-            img = i(img)
-
+        img = i(child=img) if isinstance(i, renpy.display.motion.Transform) else i(img)
         img._unique()
 
     renpy.game.context().images.predict_show(layer, name, True)
@@ -655,18 +648,17 @@ def show(name, at_list=[ ], layer=None, what=None, zorder=None, tag=None, behind
 
     layer = default_layer(layer, key)
 
-    if renpy.config.sticky_positions:
-        if not at_list and key in sls.at_list[layer]:
-            at_list = sls.at_list[layer][key]
+    if (
+        renpy.config.sticky_positions
+        and not at_list
+        and key in sls.at_list[layer]
+    ):
+        at_list = sls.at_list[layer][key]
 
     if not at_list:
         tt = renpy.config.tag_transform.get(key, None)
         if tt is not None:
-            if not isinstance(tt, list):
-                at_list = [ tt ]
-            else:
-                at_list = list(tt)
-
+            at_list = [ tt ] if not isinstance(tt, list) else list(tt)
     if what is None:
         what = name
     elif isinstance(what, basestring):
@@ -703,11 +695,7 @@ def show(name, at_list=[ ], layer=None, what=None, zorder=None, tag=None, behind
                 return
 
     for i in at_list:
-        if isinstance(i, renpy.display.motion.Transform):
-            img = i(child=img)
-        else:
-            img = i(img)
-
+        img = i(child=img) if isinstance(i, renpy.display.motion.Transform) else i(img)
         # Mark the newly created images unique.
         img._unique()
 
@@ -786,7 +774,7 @@ def scene(layer='master'):
         renpy.config.missing_scene(layer)
 
 
-def input(prompt, default='', allow=None, exclude='{}', length=None, with_none=None, pixel_width=None, screen="input"): # @ReservedAssignment
+def input(prompt, default='', allow=None, exclude='{}', length=None, with_none=None, pixel_width=None, screen="input"):    # @ReservedAssignment
     """
     :doc: input
 
@@ -839,8 +827,16 @@ def input(prompt, default='', allow=None, exclude='{}', length=None, with_none=N
     fixed = in_fixed_rollback()
 
     if has_screen(screen):
-        widget_properties = { }
-        widget_properties["input"] = dict(default=default, length=length, allow=allow, exclude=exclude, editable=not fixed, pixel_width=pixel_width)
+        widget_properties = {
+            "input": dict(
+                default=default,
+                length=length,
+                allow=allow,
+                exclude=exclude,
+                editable=not fixed,
+                pixel_width=pixel_width,
+            )
+        }
 
         show_screen(screen, _transient=True, _widget_properties=widget_properties, prompt=prompt)
 
@@ -1153,11 +1149,7 @@ def display_menu(items,
 
         item_actions = [ ]
 
-        if widget_properties is None:
-            props = { }
-        else:
-            props = widget_properties
-
+        props = { } if widget_properties is None else widget_properties
         for (label, value) in items:
 
             if not label:
@@ -1450,11 +1442,7 @@ def pause(delay=None, music=None, with_none=None, hard=False, checkpoint=None):
     """
 
     if checkpoint is None:
-        if delay is not None:
-            checkpoint = False
-        else:
-            checkpoint = True
-
+        checkpoint = delay is None
     if renpy.config.skipping == "fast":
         return False
 
@@ -1473,11 +1461,7 @@ def pause(delay=None, music=None, with_none=None, hard=False, checkpoint=None):
     if (delay is not None) and renpy.game.after_rollback and roll_forward is None:
         delay = 0
 
-    if delay is None:
-        afm = " "
-    else:
-        afm = None
-
+    afm = " " if delay is None else None
     if hard or not renpy.store._dismiss_pause:
         renpy.ui.saybehavior(afm=afm, dismiss='dismiss_hard_pause')
     else:
@@ -1705,11 +1689,7 @@ def get_all_labels():
     Returns the set of all labels defined in the program, including labels
     defined for internal use in the libraries.
     """
-    rv = [ ]
-
-    for i in renpy.game.script.namemap.keys():
-        if isinstance(i, basestring):
-            rv.append(i)
+    rv = [i for i in renpy.game.script.namemap.keys() if isinstance(i, basestring)]
 
     return renpy.python.RevertableSet(rv)
 
@@ -2805,14 +2785,10 @@ def expand_predict(d):
     if not isinstance(d, basestring):
         return [ d ]
 
-    if not "*" in d:
+    if "*" not in d:
         return [ d ]
 
-    if "." in d:
-        l = list_files(False)
-    else:
-        l = list_images()
-
+    l = list_files(False) if "." in d else list_images()
     return fnmatch.filter(l, d)
 
 
@@ -3107,11 +3083,7 @@ def variant(name):
     if isinstance(name, basestring):
         return name in renpy.config.variants
     else:
-        for n in name:
-            if n in renpy.config.variants:
-                return True
-
-        return False
+        return any(n in renpy.config.variants for n in name)
 
 
 def vibrate(duration):
@@ -3291,11 +3263,7 @@ def get_image_load_log(age=None):
     The image load log is only kept if config.developer = True.
     """
 
-    if age is not None:
-        deadline = time.time() - age
-    else:
-        deadline = 0
-
+    deadline = time.time() - age if age is not None else 0
     for i in renpy.display.im.cache.load_log:
         if i[0] < deadline:
             break

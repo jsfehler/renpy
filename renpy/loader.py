@@ -76,8 +76,6 @@ if renpy.android:
             android.apk.APK(apk=expansion, prefix='assets/x-renpy/x-common/'),
             ]
 
-        game_apks = [ apks[0] ]
-
     else:
         print("Not using expansion file.")
 
@@ -86,7 +84,7 @@ if renpy.android:
             android.apk.APK(prefix='assets/x-renpy/x-common/'),
             ]
 
-        game_apks = [ apks[0] ]
+    game_apks = [ apks[0] ]
 
 else:
     apks = [ ]
@@ -157,9 +155,7 @@ class RPAv2ArchiveHandler(object):
         l = infile.read(24)
         offset = int(l[8:], 16)
         infile.seek(offset)
-        index = loads(zlib.decompress(infile.read()))
-        
-        return index
+        return loads(zlib.decompress(infile.read()))
 
 archive_handlers.append(RPAv2ArchiveHandler)
 
@@ -214,7 +210,7 @@ def index_archives():
     archive_extensions = [ ]
     for handler in archive_handlers:
         for ext in handler.get_supported_extensions():
-            if not (ext in archive_extensions):
+            if ext not in archive_extensions:
                 archive_extensions.append(ext)
 
     for prefix in renpy.config.archives:
@@ -238,7 +234,7 @@ def index_archives():
                                 archives.append((prefix + ext, index))
                                 archive_handled = True
                                 break
-                        if archive_handled == True:
+                        if archive_handled:
                             break
                     except:
                         raise
@@ -357,8 +353,8 @@ def scandirfiles_from_remote_file(add, seen):
     # HTML5 remote files
     index_filename = os.path.join(renpy.config.gamedir, 'renpyweb_remote_files.txt')
     if os.path.exists(index_filename):
-        files = game_files
         with open(index_filename, 'rb') as remote_index:
+            files = game_files
             while True:
                 f = remote_index.readline()
                 metadata = remote_index.readline()
@@ -436,10 +432,7 @@ class SubFile(object):
         self.length = length
         self.start = start
 
-        if not self.start:
-            self.name = fn
-        else:
-            self.name = None
+        self.name = fn if not self.start else None
 
     def open(self):
         self.f = open(self.fn, "rb")
@@ -459,11 +452,7 @@ class SubFile(object):
 
         maxlength = self.length - self.offset
 
-        if length is not None:
-            length = min(length, maxlength)
-        else:
-            length = maxlength
-
+        length = min(length, maxlength) if length is not None else maxlength
         rv1 = self.start[self.offset:self.offset + length]
         length -= len(rv1)
         self.offset += len(rv1)
@@ -482,11 +471,7 @@ class SubFile(object):
             self.open()
 
         maxlength = self.length - self.offset
-        if length is not None:
-            length = min(length, maxlength)
-        else:
-            length = maxlength
-
+        length = min(length, maxlength) if length is not None else maxlength
         # If we're in the start, then read the line ourselves.
         if self.offset < len(self.start):
             rv = ''
@@ -661,7 +646,7 @@ def load_from_archive(name):
     """
 
     for prefix, index in archives:
-        if not name in index:
+        if name not in index:
             continue
 
         afn = transfn(prefix)
@@ -809,11 +794,7 @@ def loadable(name):
     if (renpy.config.loadable_callback is not None) and renpy.config.loadable_callback(name):
         return True
 
-    for p in get_prefixes():
-        if loadable_core(p + name):
-            return True
-
-    return False
+    return any(loadable_core(p + name) for p in get_prefixes())
 
 
 def transfn(name):
@@ -843,7 +824,7 @@ def transfn(name):
     raise Exception("Couldn't find file '%s'." % name)
 
 
-hash_cache = dict()
+hash_cache = {}
 
 
 def get_hash(name):
@@ -1039,9 +1020,9 @@ def add_auto(fn, force=False):
                 auto_mtimes[fn] = auto_blacklisted
             return
 
-    mtime = auto_mtime(fn)
-
     with auto_lock:
+        mtime = auto_mtime(fn)
+
         auto_mtimes[fn] = mtime
 
 

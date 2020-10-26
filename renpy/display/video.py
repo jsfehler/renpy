@@ -73,7 +73,7 @@ def movie_start(filename, size=None, loops=0):
         loop = True
     else:
         loop = False
-        filename = filename * (loops + 1)
+        filename *= loops + 1
 
     renpy.audio.music.play(filename, channel='movie', loop=loop)
 
@@ -146,25 +146,20 @@ def get_movie_texture(channel, mask_channel=None, side_mask=False):
     c = renpy.audio.music.get_channel(channel)
     surf = c.read_video()
 
-    if side_mask:
+    if side_mask and surf is not None:
 
-        if surf is not None:
+        w, h = surf.get_size()
+        w //= 2
 
-            w, h = surf.get_size()
-            w //= 2
+        mask_surf = surf.subsurface((w, 0, w, h))
+        surf = surf.subsurface((0, 0, w, h))
 
-            mask_surf = surf.subsurface((w, 0, w, h))
-            surf = surf.subsurface((0, 0, w, h))
-
-        else:
-            mask_surf = None
-
-    elif mask_channel:
-        mc = renpy.audio.music.get_channel(mask_channel)
-        mask_surf = mc.read_video()
-    else:
+    elif side_mask or not mask_channel:
         mask_surf = None
 
+    else:
+        mc = renpy.audio.music.get_channel(mask_channel)
+        mask_surf = mc.read_video()
     if mask_surf is not None:
 
         # Something went wrong with the mask video.

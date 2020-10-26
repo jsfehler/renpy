@@ -147,11 +147,7 @@ class Motion(Container):
             if t > 1.0:
                 t = 2.0 - t
 
-        if self.add_sizes:
-            res = self.function(t, sizes)
-        else:
-            res = self.function(t)
-
+        res = self.function(t, sizes) if self.add_sizes else self.function(t)
         res = tuple(res)
 
         if len(res) == 2:
@@ -173,11 +169,7 @@ class Motion(Container):
 
     def render(self, width, height, st, at):
 
-        if self.anim_timebase:
-            t = at
-        else:
-            t = st
-
+        t = at if self.anim_timebase else st
         child = render(self.child, width, height, st, at)
         cw, ch = child.get_size()
 
@@ -449,11 +441,7 @@ class ZoomCommon(renpy.display.core.Displayable):
         if after_child:
             self.after_child = renpy.easy.displayable(after_child)
         else:
-            if end_identity:
-                self.after_child = child
-            else:
-                self.after_child = None
-
+            self.after_child = child if end_identity else None
         self.time_warp = time_warp
         self.bilinear = bilinear
         self.opaque = opaque
@@ -464,16 +452,8 @@ class ZoomCommon(renpy.display.core.Displayable):
 
     def render(self, width, height, st, at):
 
-        if self.anim_timebase:
-            t = at
-        else:
-            t = st
-
-        if self.time:
-            done = min(t / self.time, 1.0)
-        else:
-            done = 1.0
-
+        t = at if self.anim_timebase else st
+        done = min(t / self.time, 1.0) if self.time else 1.0
         if self.repeat:
             done = done % 1.0
 
@@ -504,11 +484,7 @@ class ZoomCommon(renpy.display.core.Displayable):
 
     def event(self, ev, x, y, st):
 
-        if not self.time:
-            done = 1.0
-        else:
-            done = min(st / self.time, 1.0)
-
+        done = 1.0 if not self.time else min(st / self.time, 1.0)
         if done == 1.0 and self.after_child:
             return self.after_child.event(ev, x, y, st)
         else:

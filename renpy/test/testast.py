@@ -133,10 +133,7 @@ class Pattern(Node):
 
         f = renpy.test.testfocus.find_focus(self.pattern)
 
-        if f is not None:
-            return True
-        else:
-            return False
+        return f is not None
 
 
 class Click(Pattern):
@@ -195,10 +192,7 @@ class Scroll(Node):
 
         f = renpy.test.testfocus.find_focus(self.pattern)
 
-        if f is not None:
-            return True
-        else:
-            return False
+        return f is not None
 
 
 class Drag(Node):
@@ -282,10 +276,7 @@ class Drag(Node):
 
         f = renpy.test.testfocus.find_focus(self.pattern)
 
-        if f is not None:
-            return True
-        else:
-            return False
+        return f is not None
 
 
 class Type(Pattern):
@@ -398,7 +389,7 @@ class Until(Node):
     def execute(self, state, t):
         child, child_state, start = state
 
-        if self.right.ready() and not (child is self.right):
+        if self.right.ready() and child is not self.right:
             child = self.right
             child_state = None
 

@@ -185,8 +185,6 @@ def twomap(src, dst, white, black):
     bg = black[1]
     bb = black[2]
 
-    ramp = renpy.display.im.ramp
-
     if br == 0 and bg == 0 and bb == 0:
         linmap(src, dst,
                wr + 1,
@@ -194,6 +192,8 @@ def twomap(src, dst, white, black):
                wb + 1,
                wa + 1)
     else:
+        ramp = renpy.display.im.ramp
+
         map(src, dst,
             ramp(br, wr),
             ramp(bg, wg),
@@ -261,7 +261,7 @@ def colormatrix(src, dst, matrix):
     offs = byte_offset(src)
 
     o = [ None ] * 4
-    for i in range(0, 4):
+    for i in range(4):
         o[offs[i]] = i
 
     _renpy.colormatrix(src, dst,

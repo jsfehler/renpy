@@ -510,11 +510,7 @@ class SnowBlossomParticle(renpy.python.NoRollback):
             sw = renpy.config.screen_height
             sh = renpy.config.screen_width
 
-        if self.yspeed > 0:
-            self.ystart = -border
-        else:
-            self.ystart = sh + border
-
+        self.ystart = -border if self.yspeed > 0 else sh + border
         travel_time = (2.0 * border + sh) / abs(yspeed)
 
         xdist = xspeed * travel_time
@@ -534,21 +530,18 @@ class SnowBlossomParticle(renpy.python.NoRollback):
         xpos = self.xstart + to * self.xspeed
         ypos = self.ystart + to * self.yspeed
 
-        if not self.rotate:
-            sh = renpy.config.screen_height
-        else:
-            sh = renpy.config.screen_width
-
+        sh = renpy.config.screen_width if self.rotate else renpy.config.screen_height
         if ypos > sh + self.border:
             return None
 
         if ypos < -self.border:
             return None
 
-        if not self.rotate:
-            return int(xpos), int(ypos), to + self.offset, self.image
-        else:
+        if self.rotate:
             return int(ypos), int(xpos), to + self.offset, self.image
+
+        else:
+            return int(xpos), int(ypos), to + self.offset, self.image
 
 
 def SnowBlossom(d,

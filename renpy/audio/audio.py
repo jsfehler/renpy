@@ -402,9 +402,11 @@ class Channel(object):
 
         mixer_volume = renpy.game.preferences.volumes.get(self.mixer, 1.0)
 
-        if renpy.game.preferences.self_voicing:
-            if self.mixer not in renpy.config.voice_mixers:
-                mixer_volume = mixer_volume * renpy.game.preferences.self_voicing_volume_drop
+        if (
+            renpy.game.preferences.self_voicing
+            and self.mixer not in renpy.config.voice_mixers
+        ):
+            mixer_volume = mixer_volume * renpy.game.preferences.self_voicing_volume_drop
 
         vol = self.chan_volume * mixer_volume
 
@@ -423,10 +425,7 @@ class Channel(object):
         if force_stop:
             self.wait_stop = False
 
-            if self.loop:
-                self.queue = self.queue[-len(self.loop):]
-            else:
-                self.queue = [ ]
+            self.queue = self.queue[-len(self.loop):] if self.loop else [ ]
             return
 
         topq = None
@@ -643,10 +642,7 @@ class Channel(object):
                 self.wait_stop = synchro_start
                 self.synchro_start = synchro_start
 
-            if loop:
-                self.loop = list(filenames)
-            else:
-                self.loop = [ ]
+            self.loop = list(filenames) if loop else [ ]
 
     def get_playing(self):
 

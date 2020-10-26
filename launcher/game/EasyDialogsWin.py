@@ -834,11 +834,8 @@ ARGV_CMDLINE_DATA=14
 
 def _setmenu(control, items):
     for item in items:
-        if type(item) == type(()):
-            label = item[0]
-        else:
-            label = item
-        if label[-1] == '=' or label[-1] == ':':
+        label = item[0] if type(item) == type(()) else item
+        if label[-1] in ['=', ':']:
             label = label[:-1]
         user32.SendMessageA(control, CB_ADDSTRING, 0, label)
     user32.SendMessageA(control, CB_SETCURSEL, 0, 0)
@@ -848,13 +845,10 @@ def _selectoption(d, optionlist, idx):
         user32.MessageBeep(-1)
         return
     option = optionlist[idx]
-    if type(option) == type(()):
-        if len(option) == 4:
-            help = option[2]
-        elif len(option) > 1:
-            help = option[-1]
-        else:
-            help = ''
+    if type(option) == type(()) and len(option) == 4:
+        help = option[2]
+    elif type(option) == type(()) and len(option) > 1:
+        help = option[-1]
     else:
         help = ''
     h = user32.GetDlgItem(d, ARGV_OPTION_EXPLAIN)
@@ -862,11 +856,8 @@ def _selectoption(d, optionlist, idx):
         help = help[:250] + '...'
     user32.SetWindowTextA(h, help)
     hasvalue = 0
-    if type(option) == type(()):
-        label = option[0]
-    else:
-        label = option
-    if label[-1] == '=' or label[-1] == ':':
+    label = option[0] if type(option) == type(()) else option
+    if label[-1] in ['=', ':']:
         hasvalue = 1
     h = user32.GetDlgItem(d, ARGV_OPTION_VALUE)
     user32.SetWindowTextA(h, '')
@@ -1054,7 +1045,7 @@ def test():
     try:
         if hasattr(MacOS, 'SchedParams'):
             appsw = MacOS.SchedParams(1, 0)
-        for i in xrange(20):
+        for _ in xrange(20):
             bar.inc()
             time.sleep(0.05)
         bar.set(0,100)

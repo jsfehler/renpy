@@ -106,10 +106,9 @@ class ScreenProfile(renpy.object.Object):
 
         self.const = const
 
-        if name is not None:
-            if isinstance(name, basestring):
-                name = tuple(name.split())
-                profile[name] = self
+        if name is not None and isinstance(name, basestring):
+            name = tuple(name.split())
+            profile[name] = self
 
 
 def get_profile(name):
@@ -366,25 +365,13 @@ class ScreenDisplayable(renpy.display.layout.Container):
         # The persistent cache.
         self.cache = { }
 
-        if tag and layer:
-            old_screen = get_screen(tag, layer)
-        else:
-            old_screen = None
-
+        old_screen = get_screen(tag, layer) if tag and layer else None
         # A map from name to the transform with that name. (This is
         # taken from the old version of the screen, if it exists.
-        if old_screen is not None:
-            self.transforms = old_screen.transforms
-        else:
-            self.transforms = { }
-
+        self.transforms = old_screen.transforms if old_screen is not None else { }
         # A map from a (screen name, id) pair to cache. This is for use
         # statements with the id parameter.
-        if old_screen is not None:
-            self.use_cache = old_screen.use_cache
-        else:
-            self.use_cache = { }
-
+        self.use_cache = old_screen.use_cache if old_screen is not None else { }
         # A version of the cache that's used when we have a screen that is
         # being displayed with the same tag with a cached copy of the screen
         # we want to display.
@@ -448,7 +435,7 @@ class ScreenDisplayable(renpy.display.layout.Container):
 
     def find_focusable(self, callback, focus_name):
 
-        hiding = (self.phase == OLD) or (self.phase == HIDE)
+        hiding = self.phase in [OLD, HIDE]
 
         try:
             push_current_screen(self)
@@ -685,7 +672,7 @@ class ScreenDisplayable(renpy.display.layout.Container):
         rv = renpy.display.render.Render(w, h)
         rv.focus_screen = self
 
-        hiding = (self.phase == OLD) or (self.phase == HIDE)
+        hiding = self.phase in [OLD, HIDE]
 
         if self.screen is None:
             sensitive = False
@@ -705,7 +692,7 @@ class ScreenDisplayable(renpy.display.layout.Container):
 
     def event(self, ev, x, y, st):
 
-        if (self.phase == OLD) or (self.phase == HIDE):
+        if self.phase in [OLD, HIDE]:
             return
 
         if not self.screen:
@@ -1060,10 +1047,7 @@ def has_screen(name):
     if not name:
         return False
 
-    if get_screen_variant(name[0]):
-        return True
-    else:
-        return False
+    return bool(get_screen_variant(name[0]))
 
 
 def show_screen(_screen_name, *_args, **kwargs):
@@ -1256,9 +1240,7 @@ def use_screen(_screen_name, *_args, **kwargs):
     _current_screen.old_transfers = True
 
     if screen.parameters:
-        scope = { }
-        scope["_kwargs"] = kwargs
-        scope["_args"] = _args
+        scope = {"_kwargs": kwargs, "_args": _args}
     else:
         scope = _scope.copy()
         scope.update(kwargs)
@@ -1278,7 +1260,7 @@ def current_screen():
     return _current_screen
 
 
-def get_widget(screen, id, layer=None): # @ReservedAssignment
+def get_widget(screen, id, layer=None):    # @ReservedAssignment
     """
     :doc: screens
 
@@ -1304,8 +1286,7 @@ def get_widget(screen, id, layer=None): # @ReservedAssignment
     if screen.child is None:
         screen.update()
 
-    rv = screen.widgets.get(id, None)
-    return rv
+    return screen.widgets.get(id, None)
 
 
 def get_widget_properties(id, screen=None, layer=None): # @ReservedAssignment
@@ -1370,15 +1351,14 @@ def show_overlay_screens(suppress_overlay):
     else:
         show = False
 
-    if show:
+    for i in renpy.config.overlay_screens:
+        if show:
 
-        for i in renpy.config.overlay_screens:
             if get_screen(i) is None:
                 show_screen(i)
 
-    else:
+        else:
 
-        for i in renpy.config.overlay_screens:
             if get_screen(i) is not None:
                 hide_screen(i)
 

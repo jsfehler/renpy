@@ -69,7 +69,7 @@ class Preference(object):
     def __init__(self, name, default, types=None):
         self.name = name
         self.default = default
-        self.types = types if types else type(default)
+        self.types = types or type(default)
 
         all_preferences.append(self)
 

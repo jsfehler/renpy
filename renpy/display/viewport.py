@@ -527,7 +527,7 @@ class VPGrid(Viewport):
         if (rows is None) and (cols is None):
             raise Exception("A VPGrid must be given the rows or cols property.")
 
-        if (rows is not None) and (cols is None) and (transpose is None):
+        if cols is None and transpose is None:
             transpose = True
 
         self.grid_cols = cols

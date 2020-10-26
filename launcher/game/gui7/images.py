@@ -70,12 +70,7 @@ class ImageGenerator(object):
 
     def rescale_template(self, t):
 
-        rv = [ ]
-
-        for pos, opacity in t:
-            rv.append((pos * self.scale, opacity))
-
-        return rv
+        return [(pos * self.scale, opacity) for pos, opacity in t]
 
     def generate_line(self, template):
 

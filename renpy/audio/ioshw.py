@@ -140,10 +140,7 @@ class IOSVideoChannel(object):
         not been started.
         """
 
-        if self.get_playing():
-            self.queue = [ ]
-        else:
-            self.queue = self.queue[:1]
+        self.queue = [ ] if self.get_playing() else self.queue[:1]
 
     def interact(self):
         """
@@ -167,12 +164,10 @@ class IOSVideoChannel(object):
     def pause(self):
         if self.player is not None:
             self.player.pause()
-        pass
 
     def unpause(self):
         if self.player is not None:
             self.player.unpause()
-        pass
 
     def set_volume(self, volume):
         pass

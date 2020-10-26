@@ -290,11 +290,7 @@ class ShaderCache(object):
         otherwise.
         """
 
-        for i in partnames:
-            if i not in shader_part:
-                return False
-
-        return True
+        return all(i in shader_part for i in partnames)
 
     def save(self):
         """

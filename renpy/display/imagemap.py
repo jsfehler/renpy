@@ -190,10 +190,7 @@ class ImageMapCache(renpy.object.Object):
         Returns a hash of the contents of the image files. (As an integer.)
         """
 
-        rv = 0
-
-        for i in self.imagerect:
-            rv += i[0].get_hash()
+        rv = sum(i[0].get_hash() for i in self.imagerect)
 
         return rv & 0x7fffffff
 

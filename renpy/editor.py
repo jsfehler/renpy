@@ -153,7 +153,6 @@ def launch_editor(filenames, line=1, transient=False):
     if editor is None:
         init()
 
-    if editor is None:
         return False
 
     filenames = [ renpy.parser.unelide_filename(i) for i in filenames ]

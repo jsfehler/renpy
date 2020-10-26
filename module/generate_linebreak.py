@@ -103,10 +103,7 @@ for l in open("LineBreak.txt"):
 
 def generate(name, func):
 
-    ncc = [ ]
-
-    for i, ccl in enumerate(cc):
-        ncc.append(func(i, ccl))
+    ncc = [func(i, ccl) for i, ccl in enumerate(cc)]
 
     assert "CJ" not in ncc
     assert "AI" not in ncc

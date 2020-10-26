@@ -123,11 +123,7 @@ def run(restart):
     game.contexts = [ renpy.execution.Context(True) ]
 
     # Jump to an appropriate start label.
-    if game.script.has_label("_start"):
-        start_label = '_start'
-    else:
-        start_label = 'start'
-
+    start_label = '_start' if game.script.has_label("_start") else 'start'
     game.context().goto_label(start_label)
 
     try:
@@ -353,7 +349,7 @@ def main():
     archive_extensions = [ ]
     for handler in renpy.loader.archive_handlers:
         for ext in handler.get_supported_extensions():
-            if not (ext in archive_extensions):
+            if ext not in archive_extensions:
                 archive_extensions.append(ext)
 
     # The basename is the final component of the path to the gamedir.
@@ -361,7 +357,7 @@ def main():
         base, ext = os.path.splitext(i)
 
         # Check if the archive does not have any of the extensions in archive_extensions
-        if not (ext in archive_extensions):
+        if ext not in archive_extensions:
             continue
 
         renpy.config.archives.append(base)

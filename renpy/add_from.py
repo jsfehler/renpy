@@ -53,12 +53,8 @@ def generate_label(target):
     n = 0
 
     while True:
-        if n:
-            label = "_call_{}_{}".format(target, n)
-        else:
-            label = "_call_{}".format(target)
-
-        if not renpy.exports.has_label(label) and not (label in new_labels):
+        label = "_call_{}_{}".format(target, n) if n else "_call_{}".format(target)
+        if not renpy.exports.has_label(label) and label not in new_labels:
             break
 
         n += 1

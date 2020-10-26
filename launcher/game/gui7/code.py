@@ -334,11 +334,7 @@ class CodeGenerator(object):
 
                     for i, s in enumerate(renpy.text.extras.textwrap(rest, len_wrap, store.gui.asian)):
 
-                        if i == 0:
-                            s = indent + prefix + s
-                        else:
-                            s = indent + empty + s
-
+                        s = indent + prefix + s if i == 0 else indent + empty + s
                         if hashpad and len(s) < 79:
                             s = s + ' ' + "#" * (79 - len(s))
 

@@ -105,14 +105,14 @@ class _Config(object):
         if name not in cvars and renpy.config.locked:
             raise Exception('config.%s is not a known configuration variable.' % (name))
 
-        if name == "script_version":
-            renpy.store._set_script_version(value) # E1101 @UndefinedVariable
-
         if name == "developer":
             if value == "auto":
                 renpy.config.original_developer = value
                 renpy.config.developer = renpy.config.default_developer
                 return
+
+        elif name == "script_version":
+            renpy.store._set_script_version(value) # E1101 @UndefinedVariable
 
         cvars[name] = value
 
@@ -338,11 +338,7 @@ def At(d, *args):
 
     for i in args:
 
-        if isinstance(i, renpy.display.motion.Transform):
-            rv = i(child=rv)
-        else:
-            rv = i(rv)
-
+        rv = i(child=rv) if isinstance(i, renpy.display.motion.Transform) else i(rv)
     return rv
 
 

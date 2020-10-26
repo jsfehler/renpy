@@ -636,11 +636,7 @@ def list_saved_games(regexp=r'.', fast=False):
 
         if c is not None:
             json = c.get_json()
-            if json is not None:
-                extra_info = json.get("_save_name", "")
-            else:
-                extra_info = ""
-
+            extra_info = json.get("_save_name", "") if json is not None else ""
             screenshot = c.get_screenshot()
             mtime = c.get_mtime()
 
@@ -749,10 +745,7 @@ def can_load(filename, test=False):
 
     c = get_cache(filename)
 
-    if c.get_mtime():
-        return True
-    else:
-        return False
+    return bool(c.get_mtime())
 
 
 def load(filename):
@@ -936,6 +929,3 @@ def init():
 # Save locations are places where saves are saved to or loaded from, or a
 # collection of such locations. This is the default save location.
 location = None
-
-if False:
-    location = renpy.savelocation.FileLocation("blah")

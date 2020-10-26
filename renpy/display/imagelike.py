@@ -45,10 +45,7 @@ class Solid(renpy.display.core.Displayable):
 
         super(Solid, self).__init__(**properties)
 
-        if color is not None:
-            self.color = renpy.easy.color(color)
-        else:
-            self.color = None
+        self.color = renpy.easy.color(color) if color is not None else None
 
     def __hash__(self):
         return hash(self.color)
@@ -259,10 +256,7 @@ class Frame(renpy.display.core.Displayable):
         if self.tile != o.tile:
             return False
 
-        if self.tile_ratio != o.tile_ratio:
-            return False
-
-        return True
+        return self.tile_ratio == o.tile_ratio
 
     def render(self, width, height, st, at):
 

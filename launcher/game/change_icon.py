@@ -102,11 +102,8 @@ def parse_data(bf, offset):
     code_page = bf.u32()
     bf.u32()
 
-    l = [ ]
-
     bf.seek(data_offset - resource_virtual)
-    for _i in range(data_len):
-        l.append(chr(bf.u8()))
+    l = [chr(bf.u8()) for _ in range(data_len)]
 
     return (code_page, b"".join(l))
 
@@ -123,10 +120,7 @@ def parse_directory(bf, offset):
     n_named = bf.u16()
     n_id = bf.u16()
 
-    entries = [ ]
-
-    for _i in range(n_named + n_id):
-        entries.append((bf.u32(), bf.u32()))
+    entries = [(bf.u32(), bf.u32()) for _ in range(n_named + n_id)]
 
     rv = { }
 
@@ -248,9 +242,7 @@ def load_icon(fn):
     f.u16()
     count = f.u16()
 
-    rv = { }
-    rv[3] = { }
-
+    rv = {3: {}}
     group = struct.pack("HHH", 0, 1, count)
 
     for i in range(count):
@@ -301,19 +293,15 @@ def change_icons(oldexe, icofn):
     physize = rsrc_section.SizeOfRawData
     virsize = rsrc_section.Misc_VirtualSize
 
-    f = open(oldexe, "rb")
-    basedata = f.read(base)
-    data = f.read(physize)
-
-    f.close()
+    with open(oldexe, "rb") as f:
+        basedata = f.read(base)
+        data = f.read(physize)
 
     bf = BinFile(data)
 
     resources = parse_directory(bf, 0)
     # show_resources(resources, "")
     resources.update(load_icon(icofn))
-    # show_resources(resources, "")
-
     rsrc = Packer().pack(resources)
 
     newsize = len(rsrc)
@@ -356,6 +344,5 @@ def change_icons(oldexe, icofn):
 
 if __name__ == "__main__":
 
-    f = open(sys.argv[3], "wb")
-    f.write(change_icons(sys.argv[1], sys.argv[2]))
-    f.close()
+    with open(sys.argv[3], "wb") as f:
+        f.write(change_icons(sys.argv[1], sys.argv[2]))

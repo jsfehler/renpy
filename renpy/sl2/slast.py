@@ -460,11 +460,7 @@ class SLBlock(SLNode):
             i.used_screens(callback)
 
     def has_transclude(self):
-        for i in self.children:
-            if i.has_transclude():
-                return True
-
-        return False
+        return any(i.has_transclude() for i in self.children)
 
     def has_python(self):
         return any(i.has_python() for i in self.children)
@@ -500,13 +496,9 @@ class SLBlock(SLNode):
         if name in dict(self.keyword):
             return True
 
-        for n in self.children:
-
-            if isinstance(n, SLIf):
-                if n.keyword_exist(name):
-                    return True
-
-        return False
+        return any(
+            isinstance(n, SLIf) and n.keyword_exist(name) for n in self.children
+        )
 
 
 list_or_tuple = (list, tuple)

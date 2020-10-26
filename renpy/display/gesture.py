@@ -95,9 +95,10 @@ class GestureRecognizer(object):
             self.current_stroke = stroke
             self.stroke_length = length
 
-        if self.stroke_length > self.min_stroke:
-            if (not self.strokes) or (self.strokes[-1] != stroke):
-                self.strokes.append(stroke)
+        if self.stroke_length > self.min_stroke and (
+            (not self.strokes) or (self.strokes[-1] != stroke)
+        ):
+            self.strokes.append(stroke)
 
     def finish(self):
         rv = None

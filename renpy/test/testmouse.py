@@ -56,11 +56,7 @@ def move_mouse(x, y):
     pos = (x, y)
 
     if mouse_pos != pos:
-        if mouse_pos:
-            rel = (pos[0] - mouse_pos[0], pos[1] - mouse_pos[1])
-        else:
-            rel = (0, 0)
-
+        rel = (pos[0] - mouse_pos[0], pos[1] - mouse_pos[1]) if mouse_pos else (0, 0)
         post(pygame.MOUSEMOTION, pos=pos, rel=rel, buttons=tuple(mouse_buttons))
 
     mouse_pos = pos
