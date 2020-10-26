@@ -851,9 +851,7 @@ class CropMove(Transition):
             endcrop = (0.5, 0.5, 0.0, 0.0)
             topnew = False
 
-        elif mode == "custom":
-            pass
-        else:
+        elif mode != "custom":
             raise Exception("Invalid mode %s passed into CropMove." % mode)
 
         self.delay = time

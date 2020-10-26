@@ -53,11 +53,7 @@ class ShowIf(renpy.display.layout.Container):
         self.condition = condition
 
         if replaces is None:
-            if condition:
-                self.pending_event = "appear"
-            else:
-                self.pending_event = None
-
+            self.pending_event = "appear" if condition else None
             self.show_child = condition
 
         else:
@@ -236,10 +232,9 @@ def sl2bar(context=None, **properties):
     if "value" in properties:
         value = properties.pop("value")
 
-    if "style" not in properties:
-        if isinstance(value, renpy.ui.BarValue):
-            style = renpy.ui.combine_style(context.style_prefix, value.get_style()[0])
-            properties["style"] = style
+    if "style" not in properties and isinstance(value, renpy.ui.BarValue):
+        style = renpy.ui.combine_style(context.style_prefix, value.get_style()[0])
+        properties["style"] = style
 
     return renpy.display.behavior.Bar(range, value, width, height, vertical=False, **properties)
 
@@ -269,10 +264,9 @@ def sl2vbar(context=None, **properties):
     if "value" in properties:
         value = properties.pop("value")
 
-    if "style" not in properties:
-        if isinstance(value, renpy.ui.BarValue):
-            style = renpy.ui.combine_style(context.style_prefix, value.get_style()[1])
-            properties["style"] = style
+    if "style" not in properties and isinstance(value, renpy.ui.BarValue):
+        style = renpy.ui.combine_style(context.style_prefix, value.get_style()[1])
+        properties["style"] = style
 
     return renpy.display.behavior.Bar(range, value, width, height, vertical=True, **properties)
 

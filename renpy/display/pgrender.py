@@ -91,8 +91,7 @@ class Surface(pygame.Surface):
         return copy_surface(self, self)
 
     def subsurface(self, rect):
-        rv = pygame.Surface.subsurface(self, rect)
-        return rv
+        return pygame.Surface.subsurface(self, rect)
 
 
 def surface(rect, alpha):
@@ -106,11 +105,7 @@ def surface(rect, alpha):
     if isinstance(alpha, pygame.Surface):
         alpha = alpha.get_masks()[3]
 
-    if alpha:
-        sample = sample_alpha
-    else:
-        sample = sample_noalpha
-
+    sample = sample_alpha if alpha else sample_noalpha
     # We might not have initialized properly yet. This is enough
     # to get us underway.
     if sample is None:
@@ -164,8 +159,7 @@ def load_image(f, filename):
     except Exception as e:
         raise Exception("Could not load image {!r}: {!r}".format(filename, e))
 
-    rv = copy_surface_unscaled(surf)
-    return rv
+    return copy_surface_unscaled(surf)
 
 
 load_image_unscaled = load_image

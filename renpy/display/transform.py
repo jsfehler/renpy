@@ -671,11 +671,7 @@ class Transform(Container):
                     if not prop:
                         raise Exception("Unknown transform property: %r" % k)
 
-                    if prefix:
-                        prefix = prefix + "_" + new_prefix
-                    else:
-                        prefix = new_prefix
-
+                    prefix = prefix + "_" + new_prefix if prefix else new_prefix
             if "" in self.arguments:
                 for k, v in self.arguments[""].items():
                     setattr(self.state, k, v)
@@ -822,10 +818,7 @@ class Transform(Container):
         if self.function is not None:
             return True
 
-        if self.child and self.child._handles_event(event):
-            return True
-
-        return False
+        return bool(self.child and self.child._handles_event(event))
 
     def _hide(self, st, at, kind):
 
@@ -842,11 +835,7 @@ class Transform(Container):
         self.st = st = st + self.st_offset
         self.at = at = at + self.at_offset
 
-        if not (self.hide_request or self.replaced_request):
-            d = self.copy()
-        else:
-            d = self
-
+        d = self.copy() if not (self.hide_request or self.replaced_request) else self
         d.st_offset = self.st_offset
         d.at_offset = self.at_offset
 
@@ -977,10 +966,7 @@ class Transform(Container):
         return rv
 
     def _unique(self):
-        if self.child and self.child._duplicatable:
-            self._duplicatable = True
-        else:
-            self._duplicatable = False
+        self._duplicatable = bool(self.child and self.child._duplicatable)
 
     def get_placement(self):
 
@@ -990,10 +976,10 @@ class Transform(Container):
         if self.child is not None:
             cxpos, cypos, cxanchor, cyanchor, cxoffset, cyoffset, csubpixel = self.child.get_placement()
 
-            # Use non-None elements of the child placement as defaults.
-            state = self.state
-
             if renpy.config.transform_uses_child_position:
+
+                # Use non-None elements of the child placement as defaults.
+                state = self.state
 
                 if cxpos is not None:
                     state.inherited_xpos = cxpos

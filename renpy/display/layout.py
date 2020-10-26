@@ -107,11 +107,7 @@ class Container(renpy.display.core.Displayable):
         super(Container, self).__init__(**properties)
 
     def _handles_event(self, event):
-        for i in self.children:
-            if i._handles_event(event):
-                return True
-
-        return False
+        return any(i._handles_event(event) for i in self.children)
 
     def set_style_prefix(self, prefix, root):
         super(Container, self).set_style_prefix(prefix, root)
@@ -202,10 +198,7 @@ class Container(renpy.display.core.Displayable):
         self.children.pop(i) # W0631
         self.offsets = self._list_type()
 
-        if self.children:
-            self.child = self.children[-1]
-        else:
-            self.child = None
+        self.child = self.children[-1] if self.children else None
 
     def update(self):
         """
@@ -1019,11 +1012,7 @@ class MultiBox(Container):
 
             for i, (xo, yo), t in children_offsets:
 
-                if t is None:
-                    cst = st
-                else:
-                    cst = renpy.game.interface.event_time - t
-
+                cst = st if t is None else renpy.game.interface.event_time - t
                 rv = i.event(ev, x - xo, y - yo, cst)
                 if rv is not None:
                     return rv
@@ -1076,7 +1065,7 @@ class SizeGroup(renpy.object.Object):
         return maxwidth
 
 
-size_groups = dict()
+size_groups = {}
 
 
 class Window(Container):
@@ -1549,7 +1538,7 @@ class Side(Container):
         seen = set()
 
         for i in positions:
-            if not i in Side.possible_positions:
+            if i not in Side.possible_positions:
                 raise Exception("Side used with impossible position '%s'." % (i,))
 
             if i in seen:
@@ -1745,16 +1734,8 @@ class Alpha(renpy.display.core.Displayable):
         return [ self.child ]
 
     def render(self, height, width, st, at):
-        if self.anim_timebase:
-            t = at
-        else:
-            t = st
-
-        if self.time:
-            done = min(t / self.time, 1.0)
-        else:
-            done = 1.0
-
+        t = at if self.anim_timebase else st
+        done = min(t / self.time, 1.0) if self.time else 1.0
         if renpy.game.less_updates:
             done = 1.0
         elif self.repeat:
@@ -1870,11 +1851,7 @@ class Tile(Container):
                 ccw = min(cw, width - x)
                 cch = min(ch, height - y)
 
-                if (ccw < cw) or (cch < ch):
-                    ccr = cr.subsurface((0, 0, ccw, cch))
-                else:
-                    ccr = cr
-
+                ccr = cr.subsurface((0, 0, ccw, cch)) if (ccw < cw) or (cch < ch) else cr
                 rv.blit(ccr, (x, y), focus=False)
 
         return rv

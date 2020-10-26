@@ -163,10 +163,7 @@ class AndroidVideoChannel(object):
         not been started.
         """
 
-        if self.get_playing():
-            self.queue = [ ]
-        else:
-            self.queue = self.queue[:1]
+        self.queue = [ ] if self.get_playing() else self.queue[:1]
 
     def interact(self):
         """

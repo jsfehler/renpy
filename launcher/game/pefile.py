@@ -602,7 +602,7 @@ class Dump:
     """Convenience class for dumping the PE information."""
 
     def __init__(self):
-        self.text = list()
+        self.text = []
 
     def add_lines(self, txt, indent=0):
         """Adds a list of lines.
@@ -674,10 +674,7 @@ class Structure:
         self.__all_zeroes__ = False
         self.__unpacked_data_elms__ = None
         self.__file_offset__ = file_offset
-        if name:
-            self.name = name
-        else:
-            self.name = format[0]
+        self.name = name or format[0]
 
     def __get_format__(self):
         return self.__format__
@@ -770,9 +767,7 @@ class Structure:
     def dump(self, indentation=0):
         """Returns a string representation of the structure."""
 
-        dump = []
-
-        dump.append('[%s]' % self.name)
+        dump = ['[%s]' % self.name]
 
         # Refer to the __set_format__ method for an explanation
         # of the following construct.
@@ -782,7 +777,7 @@ class Structure:
                 val = getattr(self, key)
                 if isinstance(val, six.integer_types):
                     val_str = '0x%-8X' % (val)
-                    if key == 'TimeDateStamp' or key == 'dwTimeStamp':
+                    if key in ['TimeDateStamp', 'dwTimeStamp']:
                         try:
                             val_str += ' [%s UTC]' % time.asctime(time.gmtime(val))
                         except ValueError as e:
@@ -809,11 +804,7 @@ class SectionStructure(Structure):
 
         offset = start - self.VirtualAddress
 
-        if length:
-            end = offset + length
-        else:
-            end = len(self.data)
-
+        end = offset + length if length else len(self.data)
         return self.data[offset:end]
 
     def get_rva_from_offset(self, offset):
@@ -1348,9 +1339,8 @@ class PE:
         """
 
         if fname:
-            fd = open(fname, 'rb')
-            self.__data__ = fd.read()
-            fd.close()
+            with open(fname, 'rb') as fd:
+                self.__data__ = fd.read()
         elif data:
             self.__data__ = data
 
@@ -1561,11 +1551,7 @@ class PE:
         rawDataPointers = [
             s.PointerToRawData for s in self.sections if s.PointerToRawData > 0]
 
-        if len(rawDataPointers) > 0:
-            lowest_section_offset = min(rawDataPointers)
-        else:
-            lowest_section_offset = None
-
+        lowest_section_offset = min(rawDataPointers) if rawDataPointers else None
         if not lowest_section_offset or lowest_section_offset < offset:
             self.header = self.__data__[:offset]
         else:
@@ -1644,52 +1630,43 @@ class PE:
 
             file_data[offset:offset + len(struct_data)] = struct_data
 
-        if hasattr(self, 'VS_VERSIONINFO'):
-            if hasattr(self, 'FileInfo'):
-                for entry in self.FileInfo:
-                    if hasattr(entry, 'StringTable'):
-                        for st_entry in entry.StringTable:
-                            for key, entry in st_entry.entries.items():
+        if hasattr(self, 'VS_VERSIONINFO') and hasattr(self, 'FileInfo'):
+            for entry in self.FileInfo:
+                if hasattr(entry, 'StringTable'):
+                    for st_entry in entry.StringTable:
+                        for key, entry in st_entry.entries.items():
 
-                                offsets = st_entry.entries_offsets[key]
-                                lengths = st_entry.entries_lengths[key]
+                            offsets = st_entry.entries_offsets[key]
+                            lengths = st_entry.entries_lengths[key]
 
-                                if len(entry) > lengths[1]:
-
-                                    l = list()
-                                    for idx, c in enumerate(entry):
-                                        if ord(c) > 256:
-                                            l.extend([ chr(ord(c) & 0xff), chr((ord(c) & 0xff00) >> 8) ])
-                                        else:
-                                            l.extend([chr(ord(c)), '\0'])
-
-                                    file_data[
-                                        offsets[1] : offsets[1] + lengths[1] * 2 ] = l
-
+                            l = []
+                            for idx, c in enumerate(entry):
+                                if ord(c) > 256:
+                                    l.extend([ chr(ord(c) & 0xff), chr((ord(c) & 0xff00) >> 8) ])
                                 else:
+                                    l.extend([chr(ord(c)), '\0'])
 
-                                    l = list()
-                                    for idx, c in enumerate(entry):
-                                        if ord(c) > 256:
-                                            l.extend([ chr(ord(c) & 0xff), chr((ord(c) & 0xff00) >> 8) ])
-                                        else:
-                                            l.extend([chr(ord(c)), '\0'])
+                            if len(entry) > lengths[1]:
 
-                                    file_data[
-                                        offsets[1] : offsets[1] + len(entry) * 2 ] = l
+                                file_data[
+                                    offsets[1] : offsets[1] + lengths[1] * 2 ] = l
 
-                                    remainder = lengths[1] - len(entry)
-                                    file_data[
-                                        offsets[1] + len(entry) * 2 :
-                                        offsets[1] + lengths[1] * 2 ] = [
-                                            u'\0' ] * remainder * 2
+                            else:
+
+                                file_data[
+                                    offsets[1] : offsets[1] + len(entry) * 2 ] = l
+
+                                remainder = lengths[1] - len(entry)
+                                file_data[
+                                    offsets[1] + len(entry) * 2 :
+                                    offsets[1] + lengths[1] * 2 ] = [
+                                        u'\0' ] * remainder * 2
 
         new_file_data = ''.join([ chr(ord(c)) for c in file_data])
 
         if filename:
-            f = open(filename, 'wb+')
-            f.write(new_file_data)
-            f.close()
+            with open(filename, 'wb+') as f:
+                f.write(new_file_data)
         else:
             return new_file_data
 
@@ -1837,9 +1814,8 @@ class PE:
             ('IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT', self.parse_delay_import_directory),
             ('IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT', self.parse_directory_bound_imports))
 
-        if directories is not None:
-            if not isinstance(directories, (tuple, list)):
-                directories = [directories]
+        if directories is not None and not isinstance(directories, (tuple, list)):
+            directories = [directories]
 
         for entry in directory_parsing:
             # OC Patch:
@@ -1853,12 +1829,12 @@ class PE:
             # Only process all the directories if no individual ones have
             # been chosen
             #
-            if directories is None or directory_index in directories:
-
-                if dir_entry.VirtualAddress:
-                    value = entry[1](dir_entry.VirtualAddress, dir_entry.Size)
-                    if value:
-                        setattr(self, entry[0][6:], value)
+            if (
+                directories is None or directory_index in directories
+            ) and dir_entry.VirtualAddress:
+                value = entry[1](dir_entry.VirtualAddress, dir_entry.Size)
+                if value:
+                    setattr(self, entry[0][6:], value)
 
             if (directories is not None) and isinstance(directories, list) and (entry[0] in directories):
                 directories.remove(directory_index)
@@ -1893,7 +1869,7 @@ class PE:
             rva += bnd_descr.sizeof()
 
             forwarder_refs = []
-            for idx in xrange(bnd_descr.NumberOfModuleForwarderRefs):
+            for _ in xrange(bnd_descr.NumberOfModuleForwarderRefs):
                 # Both structures IMAGE_BOUND_IMPORT_DESCRIPTOR and
                 # IMAGE_BOUND_FORWARDER_REF have the same size.
                 bnd_frwd_ref = self.__unpack_data__(
@@ -2258,11 +2234,9 @@ class PE:
                 'the RVA is invalid: 0x%x' % (rva))
             return None
 
-        data_entry = self.__unpack_data__(
+        return self.__unpack_data__(
             self.__IMAGE_RESOURCE_DATA_ENTRY_format__, data,
             file_offset=self.get_offset_from_rva(rva))
-
-        return data_entry
 
     def parse_resource_entry(self, rva):
         """Parse a directory entry from the resources directory."""

@@ -317,16 +317,8 @@ def call_in_new_context(label, *args, **kwargs):
     if renpy.display.interface is not None:
         renpy.display.interface.enter_context()
 
-    if args:
-        renpy.store._args = args
-    else:
-        renpy.store._args = None
-
-    if kwargs:
-        renpy.store._kwargs = renpy.python.RevertableDict(kwargs)
-    else:
-        renpy.store._kwargs = None
-
+    renpy.store._args = args or None
+    renpy.store._kwargs = renpy.python.RevertableDict(kwargs) if kwargs else None
     try:
 
         context.goto_label(label)
@@ -407,8 +399,4 @@ def call_replay(label, scope={}):
 
 
 # Type information.
-if False:
-    script = renpy.script.Script()
-    interface = renpy.display.core.Interface()
-    log = renpy.python.RollbackLog()
-    preferences = renpy.preferences.Preferences()
+pass

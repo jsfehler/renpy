@@ -132,12 +132,13 @@ class ImageFont(object):
 
             char_surf = self.chars[c]
 
-            if renpy.config.recolor_sfonts:
-                if color != WHITE or black_color != BLACK:
-                    new_surf = renpy.display.pgrender.surface(char_surf.get_size(), True)
-                    renpy.display.module.twomap(char_surf, new_surf, color, black_color)
+            if renpy.config.recolor_sfonts and (
+                color != WHITE or black_color != BLACK
+            ):
+                new_surf = renpy.display.pgrender.surface(char_surf.get_size(), True)
+                renpy.display.module.twomap(char_surf, new_surf, color, black_color)
 
-                    char_surf = new_surf
+                char_surf = new_surf
 
             target.blit(char_surf, (x, y))
 

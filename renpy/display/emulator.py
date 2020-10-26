@@ -77,13 +77,11 @@ def touch_emulator(ev, x, y):
     elif ev.type == pygame.KEYDOWN and not ios:
         if ev.mod & pygame.KMOD_SHIFT:
             pass
-        elif not ev.key in TOUCH_KEYS:
+        elif ev.key not in TOUCH_KEYS:
             return None, x, y
 
     elif ev.type == pygame.KEYUP and not ios:
-        if ev.mod & pygame.KMOD_SHIFT:
-            pass
-        if not ev.key in TOUCH_KEYS:
+        if ev.key not in TOUCH_KEYS:
             return None, x, y
 
     return ev, x, y
@@ -97,19 +95,14 @@ def tv_emulator(ev, x, y):
     This emulates a tv-based device, like the OUYA.
     """
 
-    if ev.type == pygame.MOUSEBUTTONDOWN:
+    if (
+        ev.type == pygame.KEYDOWN
+        and ev.key not in TV_KEYS
+        or ev.type == pygame.MOUSEBUTTONDOWN
+        or ev.type == pygame.MOUSEBUTTONUP
+        or ev.type == pygame.MOUSEMOTION
+    ):
         return None, x, y
-    elif ev.type == pygame.MOUSEBUTTONUP:
-        return None, x, y
-    elif ev.type == pygame.MOUSEMOTION:
-        return None, x, y
-    elif ev.type == pygame.KEYDOWN:
-        if not ev.key in TV_KEYS:
-            return None, x, y
-    elif ev.type == pygame.KEYDOWN:
-        if not ev.key in TV_KEYS:
-            return None, x, y
-
     return ev, x, y
 
 
@@ -128,11 +121,7 @@ def dynamic_keyboard(st, at):
             )
         null = renpy.store.Null()
 
-    if renpy.display.interface.old_text_rect:
-        rv = keyboard
-    else:
-        rv = null
-
+    rv = keyboard if renpy.display.interface.old_text_rect else null
     return rv, .33
 
 

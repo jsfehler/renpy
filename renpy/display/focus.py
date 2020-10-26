@@ -339,11 +339,7 @@ def change_focus(newfocus, default=False):
     if grab:
         return
 
-    if newfocus is None:
-        widget = None
-    else:
-        widget = newfocus.widget
-
+    widget = None if newfocus is None else newfocus.widget
     current = get_focused()
 
     # Nothing to do.
@@ -616,10 +612,7 @@ def focus_ordered(delta):
 
     if current_index is None:
         if candidates:
-            if delta > 0:
-                new_focus = candidates[delta - 1]
-            else:
-                new_focus = candidates[delta]
+            new_focus = candidates[delta - 1] if delta > 0 else candidates[delta]
     else:
         new_index = current_index + delta
 

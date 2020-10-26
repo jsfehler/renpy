@@ -383,11 +383,7 @@ class MoveInterpolate(renpy.display.core.Displayable):
         old_r = renpy.display.render.render(self.old, width, height, st, at)
         new_r = renpy.display.render.render(self.new, width, height, st, at)
 
-        if self.use_old:
-            cr = old_r
-        else:
-            cr = new_r
-
+        cr = old_r if self.use_old else new_r
         self.child_width, self.child_height = cr.get_size()
         self.st = st
 

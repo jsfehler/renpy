@@ -554,8 +554,6 @@ def generate_property_function(g, prefix, propname, properties):
     g.write('register_property_function("{}", {}_property)', name, name)
     g.write("")
 
-    pass
-
 
 def generate_property_functions():
     """

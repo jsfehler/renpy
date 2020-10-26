@@ -283,10 +283,7 @@ class Live2DCommon(object):
             if v in self.motions:
                 target = self.motions
 
-            elif v in self.expressions:
-                target = self.expressions
-
-            elif v in self.nonexclusive:
+            elif v in self.expressions or v in self.nonexclusive:
                 target = self.expressions
 
             else:
@@ -558,11 +555,8 @@ class Live2D(renpy.display.core.Displayable):
 
             if kind == "PartOpacity":
                 common.model.set_part_opacity(key, value)
-            elif kind == "Parameter":
+            elif kind in ["Parameter", "Model"]:
                 common.model.set_parameter(key, value, factor)
-            elif kind == "Model":
-                common.model.set_parameter(key, value, factor)
-
         return motion.wait(st, st_fade)
 
     def render(self, width, height, st, at):

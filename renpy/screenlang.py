@@ -962,11 +962,7 @@ class UseParser(Parser):
         if args:
 
             for k, v in args.arguments:
-                if k is None:
-                    code += ", (%s)" % v
-                else:
-                    code += ", %s=(%s)" % (k, v)
-
+                code += ", (%s)" % v if k is None else ", %s=(%s)" % (k, v)
         code += ", _name=%s, _scope=_scope" % name
 
         if args:
@@ -1064,11 +1060,7 @@ class ForParser(Parser):
 
             lineno = l.number
 
-            if l.match(r"\("):
-                p = self.parse_tuple_pattern(l)
-            else:
-                p = l.name().encode("utf-8")
-
+            p = self.parse_tuple_pattern(l) if l.match(r"\(") else l.name().encode("utf-8")
             if not p:
                 break
 
@@ -1376,5 +1368,4 @@ def parse_screen(l):
 
     filename = l.filename
 
-    screen = screen_parser.parse(l)
-    return screen
+    return screen_parser.parse(l)

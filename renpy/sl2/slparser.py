@@ -615,9 +615,10 @@ class DisplayableParser(Parser):
         can_has = (self.nchildren == 1)
         self.parse_contents(l, rv, layout_mode=layout_mode, can_has=can_has, can_tag=False)
 
-        if len(rv.positional) != len(self.positional):
-            if not rv.keyword_exist("arguments"):
-                l.error("{} statement expects {} positional arguments, got {}.".format(self.name, len(self.positional), len(rv.positional)))
+        if len(rv.positional) != len(self.positional) and not rv.keyword_exist(
+            "arguments"
+        ):
+            l.error("{} statement expects {} positional arguments, got {}.".format(self.name, len(self.positional), len(rv.positional)))
 
         return rv
 
@@ -644,11 +645,7 @@ class IfParser(Parser):
 
     def parse(self, loc, l, parent, keyword):
 
-        if self.parent_contents:
-            contents_from = parent
-        else:
-            contents_from = self
-
+        contents_from = parent if self.parent_contents else self
         rv = self.node_type(loc)
 
         condition = l.require(l.python_expression)
@@ -758,11 +755,7 @@ class ForParser(Parser):
         else:
             code = None
 
-        if l.match('index'):
-            index_expression = l.require(l.say_expression)
-        else:
-            index_expression = None
-
+        index_expression = l.require(l.say_expression) if l.match('index') else None
         l.require('in')
 
         expression = l.require(l.python_expression)
@@ -866,11 +859,7 @@ class UseParser(Parser):
 
         args = renpy.parser.parse_arguments(l)
 
-        if l.keyword('id'):
-            id_expr = l.simple_expression()
-        else:
-            id_expr = None
-
+        id_expr = l.simple_expression() if l.keyword('id') else None
         if l.match(':'):
             l.expect_eol()
             l.expect_block("use statement")
@@ -954,10 +943,7 @@ class CustomParser(Parser):
         parser = None
 
         # The screen to use.
-        if screen is not None:
-            self.screen = screen
-        else:
-            self.screen = name
+        self.screen = screen if screen is not None else name
 
     def parse(self, loc, l, parent, keyword):
 
@@ -977,9 +963,10 @@ class CustomParser(Parser):
         can_has = (self.nchildren == 1)
         self.parse_contents(l, block, can_has=can_has, can_tag=False)
 
-        if len(arguments) != len(self.positional):
-            if not block.keyword_exist("arguments"):
-                l.error("{} statement expects {} positional arguments, got {}.".format(self.name, len(self.positional), len(arguments)))
+        if len(arguments) != len(self.positional) and not block.keyword_exist(
+            "arguments"
+        ):
+            l.error("{} statement expects {} positional arguments, got {}.".format(self.name, len(self.positional), len(arguments)))
 
         return slast.SLCustomUse(loc, self.screen, arguments, block)
 

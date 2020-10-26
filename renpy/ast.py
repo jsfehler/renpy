@@ -257,7 +257,7 @@ def probably_side_effect_free(expr):
     doesn't allow for a function call.
     """
 
-    return not ("(" in expr)
+    return "(" not in expr
 
 
 class PyCode(object):
@@ -688,7 +688,7 @@ class Say(Node):
                 args, kwargs = self.arguments.evaluate()
             else:
                 args = tuple()
-                kwargs = dict()
+                kwargs = {}
 
             kwargs.setdefault("interact", self.interact)
 
@@ -1124,11 +1124,7 @@ def show_imspec(imspec, atl=None):
         zorder = None
         behind = [ ]
 
-    if zorder is not None:
-        zorder = renpy.python.py_eval(zorder)
-    else:
-        zorder = None
-
+    zorder = renpy.python.py_eval(zorder) if zorder is not None else None
     if expression is not None:
         expression = renpy.python.py_eval(expression)
         expression = renpy.easy.displayable(expression)
@@ -1250,11 +1246,7 @@ class Scene(Node):
 
     def diff_info(self):
 
-        if self.imspec:
-            data = tuple(self.imspec[0])
-        else:
-            data = None
-
+        data = tuple(self.imspec[0]) if self.imspec else None
         return (Scene, data)
 
     def execute(self):
@@ -1375,11 +1367,7 @@ class With(Node):
 
         trans = renpy.python.py_eval(self.expr)
 
-        if self.paired is not None:
-            paired = renpy.python.py_eval(self.paired)
-        else:
-            paired = None
-
+        paired = renpy.python.py_eval(self.paired) if self.paired is not None else None
         renpy.exports.with_statement(trans, paired)
 
     def predict(self):
@@ -1496,13 +1484,12 @@ class Return(Node):
 
         ctx = renpy.game.context()
 
-        if renpy.game.context().init_phase:
-            if len(ctx.return_stack) == 0:
+        if renpy.game.context().init_phase and len(ctx.return_stack) == 0:
 
-                if renpy.config.developer:
-                    raise Exception("Unexpected return during the init phase.")
+            if renpy.config.developer:
+                raise Exception("Unexpected return during the init phase.")
 
-                return
+            return
 
         next_node(renpy.game.context().lookup_return(pop=True))
         renpy.game.context().pop_dynamic()
@@ -1720,11 +1707,7 @@ class Jump(Node):
 
     def scry(self):
         rv = Node.scry(self)
-        if self.expression:
-            rv._next = None
-        else:
-            rv._next = renpy.game.script.lookup(self.target)
-
+        rv._next = None if self.expression else renpy.game.script.lookup(self.target)
         return rv
 
 
@@ -1964,11 +1947,7 @@ class UserStatement(Node):
         if self.parsed and renpy.statements.get("predict_all", self.parsed):
             return [ i.block[0] for i in self.subparses ] + [ self.next ]
 
-        if self.next:
-            next_label = self.next.name
-        else:
-            next_label = None
-
+        next_label = self.next.name if self.next else None
         next_list = self.call("predict_next", next_label)
 
         if next_list is not None:
@@ -2009,10 +1988,7 @@ class UserStatement(Node):
 
     def can_warp(self):
 
-        if self.call("warp"):
-            return True
-
-        return False
+        return bool(self.call("warp"))
 
 
 class PostUserStatement(Node):
@@ -2100,11 +2076,7 @@ class Define(Node):
         self.store = store
         self.varname = name
 
-        if index is not None:
-            self.index = PyCode(index, loc=loc, mode='eval')
-        else:
-            self.index = None
-
+        self.index = PyCode(index, loc=loc, mode='eval') if index is not None else None
         self.operator = operator
         self.code = PyCode(expr, loc=loc, mode='eval')
 

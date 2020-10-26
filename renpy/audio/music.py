@@ -556,10 +556,7 @@ def get_all_mixers():
     This gets all mixers in use.
     """
 
-    rv = set()
-
-    for i in renpy.audio.audio.all_channels:
-        rv.add(i.mixer)
+    rv = {i.mixer for i in renpy.audio.audio.all_channels}
 
     return list(rv)
 

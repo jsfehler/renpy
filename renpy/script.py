@@ -197,11 +197,7 @@ class Script(object):
 
             base, ext = os.path.splitext(short_fn)
 
-            if PY2:
-                hex_checksum = checksum[:8].encode("hex")
-            else:
-                hex_checksum = checksum[:8].hex()
-
+            hex_checksum = checksum[:8].encode("hex") if PY2 else checksum[:8].hex()
             target_fn = os.path.join(
                 backupdir,
                 base + "." + hex_checksum + ext,
@@ -583,10 +579,7 @@ class Script(object):
 
             stmts = renpy.parser.parse(fullfn)
 
-            data = { }
-            data['version'] = script_version
-            data['key'] = self.key or 'unlocked'
-
+            data = {'version': script_version, 'key': self.key or 'unlocked'}
             if stmts is None:
                 return data, [ ]
 
@@ -744,8 +737,6 @@ class Script(object):
                     if "RENPY_RPYC_EXCEPTIONS" in os.environ:
                         print("While loading", rpycfn)
                         raise
-
-                    pass
 
                 if data is None:
                     data, stmts = self.load_file(dir, fn + source)

@@ -77,7 +77,7 @@ added = { }
 
 
 def add(msg, *args):
-    if not msg in added:
+    if msg not in added:
         added[msg] = True
         msg = str(msg) % args
         print(msg)
@@ -272,9 +272,8 @@ def image_exists(name, expression, tag, precise=True):
     if expression:
         return
 
-    if not precise:
-        if image_exists_imprecise(name):
-            return
+    if not precise and image_exists_imprecise(name):
+        return
 
     # If we're not precise, then we have to start looking for images
     # that we can possibly match.
@@ -416,12 +415,9 @@ def text_checks(s):
     if "%" in s and renpy.config.old_substitutions:
 
         state = 0
-        pos = 0
         fmt = ""
-        while pos < len(s):
-            c = s[pos]
-            pos += 1
-
+        for item in s:
+            c = item
             # Not in a format.
             if state == 0:
                 if c == "%":
@@ -732,10 +728,9 @@ def common(n):
 
     filename = n.filename.replace("\\", "/")
 
-    if filename.startswith("common/") or filename.startswith("renpy/common/"):
-        return True
-    else:
-        return False
+    return bool(
+        filename.startswith("common/") or filename.startswith("renpy/common/")
+    )
 
 
 def lint():

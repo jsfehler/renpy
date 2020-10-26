@@ -82,7 +82,7 @@ class DialogueTextTags(object):
                     self.text += quoted
                     continue
 
-                if tag == "p" or tag == "w":
+                if tag in ["p", "w"]:
                     if not less_pauses:
                         self.pause_start.append(len(self.text))
                         self.pause_end.append(len(self.text))
@@ -368,11 +368,7 @@ class SlowDone(object):
 
             if renpy.display.screen.has_screen("ctc"):
 
-                if self.ctc:
-                    args = [ self.ctc ]
-                else:
-                    args = [ ]
-
+                args = [ self.ctc ] if self.ctc else [ ]
                 renpy.display.screen.show_screen("ctc", *args, _transient=True, _ignore_extra_kwargs=True, **self.ctc_kwargs)
                 renpy.exports.restart_interaction()
 
@@ -878,11 +874,7 @@ class ADVCharacter(object):
             else:
                 return
 
-        if attrs is None:
-            attrs = ()
-        else:
-            attrs = tuple(attrs)
-
+        attrs = () if attrs is None else tuple(attrs)
         tagged_attrs = (self.image_tag,) + attrs
         images = renpy.game.context().images
 
@@ -934,11 +926,7 @@ class ADVCharacter(object):
         renpy.game.context().say_attributes = None
 
         if interact:
-            if temporary_attrs:
-                temporary_attrs = list(temporary_attrs)
-            else:
-                temporary_attrs = [ ]
-
+            temporary_attrs = list(temporary_attrs) if temporary_attrs else [ ]
             # Prepend speaking_attribute, if present. This allows it to
             # be suppressed by a negative temporary_attr, if desired.
             if renpy.config.speaking_attribute is not None:
@@ -1052,7 +1040,12 @@ class ADVCharacter(object):
         return "<Character: {!r}>".format(self.name)
 
     def empty_window(self):
-        if renpy.config.fast_empty_window and (self.name is None) and not (self.what_prefix or self.what_suffix):
+        if (
+            renpy.config.fast_empty_window
+            and self.name is None
+            and not self.what_prefix
+            and not self.what_suffix
+        ):
             self.do_show(None, "")
             return
 
@@ -1206,11 +1199,7 @@ class ADVCharacter(object):
 
         try:
 
-            if self.dynamic:
-                who = "<Dynamic>"
-            else:
-                who = self.name
-
+            who = "<Dynamic>" if self.dynamic else self.name
             return self.do_predict(who, what)
 
         finally:

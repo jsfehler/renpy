@@ -326,9 +326,10 @@ class ImageReference(renpy.display.core.Displayable):
     __version__ = 1
 
     def after_upgrade(self, version):
-        if version < 1:
-            if isinstance(self.param_target, renpy.display.transform.Transform):
-                self.old_transform = self.param_target
+        if version < 1 and isinstance(
+            self.param_target, renpy.display.transform.Transform
+        ):
+            self.old_transform = self.param_target
 
     def __init__(self, name, **properties):
         """
@@ -353,10 +354,7 @@ class ImageReference(renpy.display.core.Displayable):
         if not self._equals(o):
             return False
 
-        if self.name != o.name:
-            return False
-
-        return True
+        return self.name == o.name
 
     def _target(self):
 
@@ -440,9 +438,11 @@ class ImageReference(renpy.display.core.Displayable):
         rv = self._copy(args)
         rv.target = None
 
-        if isinstance(rv.name, renpy.display.core.Displayable):
-            if rv.name._duplicatable:
-                rv.name = rv.name._duplicate(args)
+        if (
+            isinstance(rv.name, renpy.display.core.Displayable)
+            and rv.name._duplicatable
+        ):
+            rv.name = rv.name._duplicate(args)
 
         rv.find_target()
         rv._duplicatable = rv.target._duplicatable
@@ -582,11 +582,7 @@ class DynamicImage(renpy.display.core.Displayable):
     def __hash__(self):
 
         if self.hash_name is None:
-            if isinstance(self.name, list):
-                self.hash_name = tuple(self.name)
-            else:
-                self.hash_name = self.name
-
+            self.hash_name = tuple(self.name) if isinstance(self.name, list) else self.name
         return hash(self.hash_name)
 
     def __eq__(self, o):
@@ -599,10 +595,7 @@ class DynamicImage(renpy.display.core.Displayable):
         if self.name != o.name:
             return False
 
-        if self._uses_scope and (self.target != o.target):
-            return False
-
-        return True
+        return not self._uses_scope or self.target == o.target
 
     def _target(self):
         if self.target:
@@ -624,10 +617,7 @@ class DynamicImage(renpy.display.core.Displayable):
             return
 
         if self._args.prefix is None:
-            if self._duplicatable:
-                prefix = self.style.prefix
-            else:
-                prefix = ""
+            prefix = self.style.prefix if self._duplicatable else ""
         else:
             prefix = self._args.prefix
 
@@ -830,11 +820,7 @@ class ShownImageInfo(renpy.object.Object):
         if exact and (len(shown) != len(rest)):
             return False
 
-        for a, b in zip(shown, rest):
-            if a != b:
-                return False
-
-        return True
+        return all(a == b for a, b in zip(shown, rest))
 
     def get_showing_tags(self, layer):
         """
@@ -863,7 +849,7 @@ class ShownImageInfo(renpy.object.Object):
             if l == layer:
                 del self.attributes[l, t]
 
-        self.shown = set((l, t) for l, t in self.shown if l != layer)
+        self.shown = {(l, t) for l, t in self.shown if l != layer}
 
     def predict_show(self, layer, name, show=True):
         """
@@ -908,7 +894,7 @@ class ShownImageInfo(renpy.object.Object):
             layer = renpy.config.tag_layer.get(tag, "master")
 
         # If the name matches one that exactly exists, return it.
-        if (name in images) and not (wanted or remove):
+        if name in images and not wanted and not remove:
             ca = getattr(images[name], "_choose_attributes", None)
 
             if ca is None:

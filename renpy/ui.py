@@ -977,9 +977,8 @@ def _textbutton(label, clicked=None, style=None, text_style=None, substitute=Tru
 
     # Deal with potentially bad keyword arguments. (We'd get these if the user
     # writes text_align instead of text_text_align.)
-    if "align" in text_kwargs:
-        if isinstance(text_kwargs["align"], float):
-            text_kwargs.pop("align")
+    if "align" in text_kwargs and isinstance(text_kwargs["align"], float):
+        text_kwargs.pop("align")
     text_kwargs.pop("y_fudge", None)
 
     if style is None:
@@ -1028,14 +1027,11 @@ def _bar(*args, **properties):
         width, height, range, value = args  # @ReservedAssignment
     if len(args) == 2:
         range, value = args  # @ReservedAssignment
-        width = None
-        height = None
     else:
         range = 1  # @ReservedAssignment
         value = 0
-        width = None
-        height = None
-
+    width = None
+    height = None
     if "width" in properties:
         width = properties.pop("width")
 
@@ -1048,17 +1044,16 @@ def _bar(*args, **properties):
     if "value" in properties:
         value = properties.pop("value")
 
-    if "style" not in properties:
-        if isinstance(value, BarValue):
-            if properties["vertical"]:
-                style = value.get_style()[1]
-            else:
-                style = value.get_style()[0]
+    if "style" not in properties and isinstance(value, BarValue):
+        if properties["vertical"]:
+            style = value.get_style()[1]
+        else:
+            style = value.get_style()[0]
 
-            if isinstance(style, basestring):
-                style = prefixed_style(style)
+        if isinstance(style, basestring):
+            style = prefixed_style(style)
 
-            properties["style"] = style
+        properties["style"] = style
 
     return renpy.display.behavior.Bar(range, value, width, height, **properties)
 
@@ -1112,9 +1107,11 @@ def viewport_common(vpfunc, _spacing_to_side, scrollbars=None, **properties):
         from renpy.sl2.slproperties import position_property_names
 
         for k, v in core_properties.items():
-            if k in position_property_names:
-                side_properties[k] = v
-            elif _spacing_to_side and (k == "spacing"):
+            if (
+                k in position_property_names
+                or _spacing_to_side
+                and k == "spacing"
+            ):
                 side_properties[k] = v
             else:
                 viewport_properties[k] = v
@@ -1147,12 +1144,6 @@ def viewport_common(vpfunc, _spacing_to_side, scrollbars=None, **properties):
         addable = stack.pop()
 
         vscrollbar(adjustment=rv.yadjustment, **vscrollbar_properties)
-        close()
-
-        stack.append(addable)
-
-        return rv
-
     elif scrollbars == "horizontal":
 
         if renpy.config.scrollbar_child_size:
@@ -1164,12 +1155,6 @@ def viewport_common(vpfunc, _spacing_to_side, scrollbars=None, **properties):
         addable = stack.pop()
 
         scrollbar(adjustment=rv.xadjustment, **scrollbar_properties)
-        close()
-
-        stack.append(addable)
-
-        return rv
-
     else:
 
         if renpy.config.scrollbar_child_size:
@@ -1182,11 +1167,12 @@ def viewport_common(vpfunc, _spacing_to_side, scrollbars=None, **properties):
 
         vscrollbar(adjustment=rv.yadjustment, **vscrollbar_properties)
         scrollbar(adjustment=rv.xadjustment, **scrollbar_properties)
-        close()
 
-        stack.append(addable)
+    close()
 
-        return rv
+    stack.append(addable)
+
+    return rv
 
 
 def viewport(**properties):
@@ -1322,11 +1308,7 @@ def _hotspot(spot, style='hotspot', **properties):
     properties.setdefault("yminimum", h)
     properties.setdefault("ymaximum", h)
 
-    if imagemap.alpha:
-        focus_mask = True
-    else:
-        focus_mask = None
-
+    focus_mask = True if imagemap.alpha else None
     properties.setdefault("focus_mask", focus_mask)
 
     return renpy.display.behavior.Button(

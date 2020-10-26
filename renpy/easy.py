@@ -240,10 +240,7 @@ def split_properties(properties, *prefixes):
         text_properties, button_properties = renpy.split_properties(properties, "text_", "")
     """
 
-    rv = [ ]
-
-    for _i in prefixes:
-        rv.append({})
+    rv = [{} for _ in prefixes]
 
     if not properties:
         return rv

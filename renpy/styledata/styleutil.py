@@ -41,13 +41,7 @@ def none_is_0(o):
 
 
 def expand_focus_mask(v):
-    if v is None:
-        return v
-    elif v is False:
-        return v
-    elif v is True:
-        return v
-    elif callable(v):
+    if v is None or v is False or v is True or callable(v):
         return v
     else:
         return renpy.easy.displayable(v)

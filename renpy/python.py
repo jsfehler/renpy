@@ -577,9 +577,7 @@ def unicode_sub(m):
     if "u" not in prefix and "U" not in prefix:
         prefix = 'u' + prefix
 
-    rv = prefix + sep + body + sep
-
-    return rv
+    return prefix + sep + body + sep
 
 
 string_re = re.compile(r'([uU]?[rR]?)("""|"|\'\'\'|\')((\\.|.)*?)\2')
@@ -699,11 +697,7 @@ def py_compile(source, mode, filename='<none>', lineno=1, ast_node=False, cache=
     try:
         line_offset = lineno - 1
 
-        if mode == "hide":
-            py_mode = "exec"
-        else:
-            py_mode = mode
-
+        py_mode = "exec" if mode == "hide" else mode
         if filename in py3_files:
 
             flags = py3_compile_flags
@@ -810,7 +804,7 @@ class CompressedList(object):
         # Find an element in the old list corresponding to the pivot.
         old_half = (len(old) - 1) // 2
 
-        for i in range(0, old_half + 1):
+        for i in range(old_half + 1):
 
             if old[old_half - i] is new_pivot:
                 old_center = old_half - i
@@ -1040,8 +1034,7 @@ class RevertableSet(set):
             self.update(state)
 
     def __getstate__(self):
-        rv = ({ i : True for i in self},)
-        return rv
+        return ({ i : True for i in self},)
 
     # Required to ensure that getstate and setstate are called.
     __reduce__ = object.__reduce__
@@ -1194,11 +1187,7 @@ class DetRandom(random.Random):
 
     def random(self):
 
-        if self.stack:
-            rv = self.stack.pop()
-        else:
-            rv = super(DetRandom, self).random()
-
+        rv = self.stack.pop() if self.stack else super(DetRandom, self).random()
         log = renpy.game.log
 
         if log.current is not None:
@@ -1376,8 +1365,6 @@ class Rollback(renpy.object.Object):
             else:
                 if renpy.config.debug:
                     print("Removing unreachable:", o, file=renpy.log.real_stdout)
-                    pass
-
         del self.objects[:]
         self.objects.extend(new_objects)
 
@@ -1527,16 +1514,13 @@ class RollbackLog(renpy.object.Object):
         # or an interaction took place. (Or we're forced.)
         ignore = True
 
-        if force:
+        if (
+            self.current is not None
+            and (self.current.checkpoint or self.current.retain_after_load)
+            or force
+            or self.did_interaction
+        ):
             ignore = False
-        elif self.did_interaction:
-            ignore = False
-        elif self.current is not None:
-            if self.current.checkpoint:
-                ignore = False
-            elif self.current.retain_after_load:
-                ignore = False
-
         if ignore:
             return
 
@@ -1647,11 +1631,7 @@ class RollbackLog(renpy.object.Object):
 
         for store_name, sd in store_dicts.items():
             for name in sd.ever_been_changed:
-                if name in sd:
-                    rv[store_name + "." + name] = sd[name]
-                else:
-                    rv[store_name + "." + name] = deleted
-
+                rv[store_name + "." + name] = sd[name] if name in sd else deleted
         for i in reversed(renpy.game.contexts[1:]):
             i.pop_dynamic_roots(rv)
 
@@ -1678,10 +1658,7 @@ class RollbackLog(renpy.object.Object):
                 break
 
     def in_rollback(self):
-        if self.forward:
-            return True
-        else:
-            return False
+        return bool(self.forward)
 
     def in_fixed_rollback(self):
         return self.rollback_is_fixed
@@ -2072,9 +2049,10 @@ class RollbackLog(renpy.object.Object):
 
         for i in reversed(self.log):
 
-            if i.identifier is not None:
-                if renpy.game.script.has_label(i.context.current):
-                    self.identifier_cache[i.identifier] = checkpoints
+            if i.identifier is not None and renpy.game.script.has_label(
+                i.context.current
+            ):
+                self.identifier_cache[i.identifier] = checkpoints
 
             if i.hard_checkpoint:
                 checkpoints += 1

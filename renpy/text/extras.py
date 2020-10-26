@@ -158,12 +158,13 @@ def filter_text_tags(s, allow=None, deny=None):
             if kind and (kind[0] == "/"):
                 kind = kind[1:]
 
-            if allow is not None:
-                if kind in allow:
-                    rv.append("{" + text + "}")
-            else:
-                if kind not in deny:
-                    rv.append("{" + text + "}")
+            if (
+                allow is not None
+                and kind in allow
+                or allow is None
+                and kind not in deny
+            ):
+                rv.append("{" + text + "}")
         else:
             rv.append(text.replace("{", "{{"))
 
@@ -268,16 +269,7 @@ def textwrap(s, width=78, asian=False):
 
         eaw = unicodedata.east_asian_width(c)
 
-        if (eaw == "F") or (eaw == "W"):
-            gwidth = 20
-        elif (eaw == "A"):
-            if asian:
-                gwidth = 20
-            else:
-                gwidth = 10
-        else:
-            gwidth = 10
-
+        gwidth = 20 if eaw == "A" and asian or eaw in ["F", "W"] else 10
         g = textsupport.Glyph()
         g.character = ord(c)
         g.ascent = 10

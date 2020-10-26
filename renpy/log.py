@@ -105,11 +105,7 @@ class LogFile(object):
 
             altfn = os.path.join(tempfile.gettempdir(), "renpy-" + self.name + ".txt")
 
-            if self.append:
-                mode = "a"
-            else:
-                mode = "w"
-
+            mode = "a" if self.append else "w"
             if renpy.config.log_to_stdout:
                 self.file = real_stdout
 
@@ -260,7 +256,6 @@ class StdioRedirector(object):
 
     def flush(self):
         self.real_file.flush()
-        pass
 
     def close(self):
         pass

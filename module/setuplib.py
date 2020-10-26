@@ -416,9 +416,8 @@ def copyfile(source, dest, replace=None, replace_with=None):
     sfn = os.path.join("..", source)
     dfn = os.path.join("..", dest)
 
-    if os.path.exists(dfn):
-        if os.path.getmtime(sfn) <= os.path.getmtime(dfn):
-            return
+    if os.path.exists(dfn) and os.path.getmtime(sfn) <= os.path.getmtime(dfn):
+        return
 
     with open(sfn, "r") as sf:
         data = sf.read()

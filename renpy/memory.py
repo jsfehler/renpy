@@ -329,9 +329,8 @@ def profile_memory(fraction=1.0, minimum=0):
 
     for size, name in usage:
 
-        if (remaining - size) < total * fraction:
-            if size > minimum:
-                write("{:13,d} {}".format(size, name))
+        if (remaining - size) < total * fraction and size > minimum:
+            write("{:13,d} {}".format(size, name))
 
         remaining -= size
 
@@ -372,12 +371,9 @@ def diff_memory(update=True):
     usage = profile_memory_common()[0]
     total = sum(usage.values())
 
-    diff = [ ]
-
-    for k, v in usage.items():
-        diff.append((
+    diff = [(
             v - old_usage.get(k, 0),
-            k))
+            k) for k, v in usage.items()]
 
     diff.sort()
 

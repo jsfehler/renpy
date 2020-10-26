@@ -275,10 +275,14 @@ def get_catmull_rom_value(t, p_1, p0, p1, p2):
     """
     t = float(max(0.0, min(1.0, t)))
     return type(p0)(
-        (t * ((2 - t) * t - 1) * p_1
-        +(t * t * (3 * t - 5) + 2) * p0
-        +t * ((4 - 3 * t) * t + 1) * p1
-        +(t - 1) * t * t * p2) / 2)
+        (
+            t * ((2 - t) * t - 1) * p_1
+            + (t ** 2 * (3 * t - 5) + 2) * p0
+            + t * ((4 - 3 * t) * t + 1) * p1
+            + (t - 1) * t * t * p2
+        )
+        / 2
+    )
 
 
 # A list of atl transforms that may need to be compile.
@@ -425,17 +429,16 @@ class ATLTransformBase(renpy.object.Object):
 
         self.atl_st_offset = None
 
-        if self is t:
+        if (
+            self is t
+            or not isinstance(t, ATLTransformBase)
+            or t.atl is not self.atl
+        ):
             return
-        elif not isinstance(t, ATLTransformBase):
-            return
-        elif t.atl is not self.atl:
-            return
-
         # Important to do it this way, so we use __eq__. The exception handling
         # optimistically assumes that uncomparable objects are the same.
         try:
-            if not (t.context == self.context):
+            if t.context != self.context:
                 return
         except:
             pass
@@ -527,7 +530,7 @@ class ATLTransformBase(renpy.object.Object):
 
         return rv
 
-    def compile(self): # @ReservedAssignment
+    def compile(self):    # @ReservedAssignment
         """
         Compiles the ATL code into a block. As necessary, updates the
         properties.
@@ -544,12 +547,11 @@ class ATLTransformBase(renpy.object.Object):
                         self.parameters.positional[0],
                         ))
 
-        if constant and self.parent_transform:
-            if self.parent_transform.block:
-                self.block = self.parent_transform.block
-                self.properties = self.parent_transform.properties
-                self.parent_transform = None
-                return self.block
+        if constant and self.parent_transform and self.parent_transform.block:
+            self.block = self.parent_transform.block
+            self.properties = self.parent_transform.properties
+            self.parent_transform = None
+            return self.block
 
         old_exception_info = renpy.game.exception_info
 
@@ -597,10 +599,12 @@ class ATLTransformBase(renpy.object.Object):
             self.transform_event = "replaced"
 
         # Notice transform events.
-        if renpy.config.atl_multiple_events:
-            if self.transform_event != self.last_transform_event:
-                events.append(self.transform_event)
-                self.last_transform_event = self.transform_event
+        if (
+            renpy.config.atl_multiple_events
+            and self.transform_event != self.last_transform_event
+        ):
+            events.append(self.transform_event)
+            self.last_transform_event = self.transform_event
 
         # Propagate transform_events from children.
         if (self.child is not None) and self.child.transform_event != self.last_child_transform_event:
@@ -623,11 +627,7 @@ class ATLTransformBase(renpy.object.Object):
         if (self.atl_st_offset is None) or (st - self.atl_st_offset) < 0:
             self.atl_st_offset = st
 
-        if self.atl.animation:
-            timebase = at
-        else:
-            timebase = st - self.atl_st_offset
-
+        timebase = at if self.atl.animation else st - self.atl_st_offset
         action, arg, pause = block.execute(trans, timebase, self.atl_state, events)
 
         renpy.game.exception_info = old_exception_info
@@ -788,11 +788,7 @@ class Block(Statement):
 
     def _handles_event(self, event):
 
-        for i in self.statements:
-            if i._handles_event(event):
-                return True
-
-        return False
+        return any(i._handles_event(event) for i in self.statements)
 
     def execute(self, trans, st, state, events):
 
@@ -1099,10 +1095,11 @@ class RawChild(RawStatement):
 
     def compile(self, ctx): # @ReservedAssignment
 
-        children = [ ]
+        children = [
+            renpy.display.motion.ATLTransform(i, context=ctx.context)
+            for i in self.children
+        ]
 
-        for i in self.children:
-            children.append(renpy.display.motion.ATLTransform(i, context=ctx.context))
 
         box = renpy.display.layout.MultiBox(layout='fixed')
 
@@ -1392,11 +1389,7 @@ class Parallel(Statement):
 
     def _handles_event(self, event):
 
-        for i in self.blocks:
-            if i._handles_event(event):
-                return True
-
-        return False
+        return any(i._handles_event(event) for i in self.blocks)
 
     def execute(self, trans, st, state, events):
 
@@ -1423,11 +1416,11 @@ class Parallel(Statement):
 
             if action == "continue":
                 newstate.append((i, arg))
-            elif action == "next":
-                left.append(arg)
             elif action == "event":
                 return action, arg, pause
 
+            elif action == "next":
+                left.append(arg)
         if newstate:
             return "continue", newstate, min(pauses)
         else:
@@ -1474,11 +1467,7 @@ class Choice(Statement):
 
     def _handles_event(self, event):
 
-        for i in self.choices:
-            if i[1]._handles_event(event):
-                return True
-
-        return False
+        return any(i[1]._handles_event(event) for i in self.choices)
 
     def execute(self, trans, st, state, events):
 
@@ -1556,10 +1545,7 @@ class RawOn(RawStatement):
     def compile(self, ctx): # @ReservedAssignment
         compiling(self.loc)
 
-        handlers = { }
-
-        for k, v in self.handlers.items():
-            handlers[k] = v.compile(ctx)
+        handlers = {k: v.compile(ctx) for k, v in self.handlers.items()}
 
         return On(self.loc, handlers)
 
@@ -1585,10 +1571,7 @@ class On(Statement):
         self.handlers = handlers
 
     def _handles_event(self, event):
-        if event in self.handlers:
-            return True
-        else:
-            return False
+        return event in self.handlers
 
     def execute(self, trans, st, state, events):
 

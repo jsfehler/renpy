@@ -37,10 +37,7 @@ class FixedCythonReporter(coverage.FileReporter):
 
         super(FixedCythonReporter, self).__init__(fn)
 
-        if old._code is None:
-            self._lines = set()
-        else:
-            self._lines = set(old._code)
+        self._lines = set() if old._code is None else set(old._code)
 
     def lines(self):
         return self._lines

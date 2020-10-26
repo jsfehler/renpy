@@ -154,8 +154,7 @@ class Cache(object):
 
         start = self.time - generations
 
-        rv = sum(i.size() for i in self.cache.values() if i.time > start)
-        return rv
+        return sum(i.size() for i in self.cache.values() if i.time > start)
 
     def init(self):
         """
@@ -386,11 +385,7 @@ class Cache(object):
         This flushes all cache entries that refer to `fn` from the cache.
         """
 
-        to_flush = [ ]
-
-        for ce in self.cache.values():
-            if fn in ce.what.predict_files():
-                to_flush.append(ce)
+        to_flush = [ce for ce in self.cache.values() if fn in ce.what.predict_files()]
 
         for ce in to_flush:
             renpy.exports.redraw(ce.what, 0)
@@ -674,15 +669,15 @@ class Image(ImageBase):
 
     def predict_files(self):
 
-        if renpy.loader.loadable(self.filename):
-            return [ self.filename ]
-        else:
-            if renpy.config.missing_image_callback:
-                im = renpy.config.missing_image_callback(self.filename)
-                if im is not None:
-                    return im.predict_files()
+        if (
+            not renpy.loader.loadable(self.filename)
+            and renpy.config.missing_image_callback
+        ):
+            im = renpy.config.missing_image_callback(self.filename)
+            if im is not None:
+                return im.predict_files()
 
-            return [ self.filename ]
+        return [ self.filename ]
 
 
 class Data(ImageBase):
@@ -775,20 +770,11 @@ class Composite(ImageBase):
         self.images = [ image(i) for i in args[1::2] ]
 
     def get_hash(self):
-        rv = 0
-
-        for i in self.images:
-            rv += i.get_hash()
-
-        return rv
+        return sum(i.get_hash() for i in self.images)
 
     def load(self):
 
-        if self.size:
-            size = self.size
-        else:
-            size = cache.get(self.images[0]).get_size()
-
+        size = self.size or cache.get(self.images[0]).get_size()
         rv = renpy.display.pgrender.surface(size, True)
 
         for pos, im in zip(self.positions, self.images):
@@ -1057,7 +1043,7 @@ def ramp(start, end):
 
         chars = [ ]
 
-        for i in range(0, 256):
+        for i in range(256):
             i = i / 255.0
             chars.append(bchr(int(end * i + start * (1.0 - i))))
 

@@ -50,9 +50,8 @@ process = None
 def periodic():
     global process
 
-    if process is not None:
-        if process.poll() is not None:
-            process = None
+    if process is not None and process.poll() is not None:
+        process = None
 
 
 def is_active():
@@ -90,7 +89,7 @@ def default_tts_function(s):
 
         return
 
-    if renpy.game.preferences.self_voicing == "debug":
+    elif renpy.game.preferences.self_voicing == "debug":
         renpy.exports.restart_interaction()
         return
 

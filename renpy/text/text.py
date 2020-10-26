@@ -1244,7 +1244,7 @@ class Layout(object):
             s, direction = log2vis(unicode(s), direction)
             l.append((ts, s))
 
-        rtl = (direction == RTL or direction == WRTL)
+        rtl = direction in [RTL, WRTL]
 
         return l, rtl
 
@@ -1847,10 +1847,11 @@ class Text(renpy.display.core.Displayable):
             if self.dirty or self.displayables is None:
                 self.update()
 
-            renders = { }
+            renders = {
+                i: renpy.display.render.render(i, width, self.style.size, st, at)
+                for i in self.displayables
+            }
 
-            for i in self.displayables:
-                renders[i] = renpy.display.render.render(i, width, self.style.size, st, at)
 
             layout = Layout(self, width, height, renders, size_only=True, drawable_res=True)
 
@@ -1935,10 +1936,9 @@ class Text(renpy.display.core.Displayable):
         if layout is None:
             return
 
-        if layout.redraw_typewriter(st) is None:
-            if self.slow:
-                self.call_slow_done(st)
-                self.slow = False
+        if layout.redraw_typewriter(st) is None and self.slow:
+            self.call_slow_done(st)
+            self.slow = False
 
         for d, xo, yo in self.displayable_offsets:
             rv = d.event(ev, x - xo, y - yo, st)
@@ -1980,10 +1980,11 @@ class Text(renpy.display.core.Displayable):
         if self.dirty or self.displayables is None:
             self.update()
 
-        renders = { }
+        renders = {
+            i: renpy.display.render.render(i, width, self.style.size, st, at)
+            for i in self.displayables
+        }
 
-        for i in self.displayables:
-            renders[i] = renpy.display.render.render(i, width, self.style.size, st, at)
 
         layout = Layout(self, width, height, renders, size_only=True, drawable_res=True)
 
