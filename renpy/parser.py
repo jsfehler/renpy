@@ -1708,6 +1708,7 @@ def parse_parameters(l):
     positional = [ ]
     extrapos = None
     extrakw = None
+    annotations = { }
 
     add_positional = True
 
@@ -1717,6 +1718,8 @@ def parse_parameters(l):
         return None
 
     while True:
+
+        annotation = None
 
         if l.match('\)'):
             break
@@ -1758,6 +1761,10 @@ def parse_parameters(l):
 
             names.add(name)
 
+            if l.match(r':'):
+                l.skip_whitespace()
+                annotation = l.require(l.string)
+
             if l.match(r'='):
                 l.skip_whitespace()
                 default = l.delimited_python("),")
@@ -1769,12 +1776,14 @@ def parse_parameters(l):
             if add_positional:
                 positional.append(name)
 
+        annotations[name] = annotation
+
         if l.match(r'\)'):
             break
 
         l.require(r',')
 
-    return renpy.ast.ParameterInfo(parameters, positional, extrapos, extrakw)
+    return renpy.ast.ParameterInfo(parameters, positional, extrapos, extrakw, annotations)
 
 
 def parse_arguments(l):
