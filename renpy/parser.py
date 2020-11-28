@@ -1763,7 +1763,7 @@ def parse_parameters(l):
 
             if l.match(r':'):
                 l.skip_whitespace()
-                annotation = l.require(l.string)
+                annotation = l.require(l.simple_expression)
 
             if l.match(r'='):
                 l.skip_whitespace()
