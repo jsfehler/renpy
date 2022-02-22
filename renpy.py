@@ -37,7 +37,7 @@ import warnings
 
 
 def path_to_common(renpy_base):
-    return renpy_base + "/renpy/common"
+    return f'{renpy_base}/renpy/common'
 
 # Given a directory holding a Ren'Py game, this is expected to return
 # the path to a directory that will hold save files.
@@ -173,14 +173,14 @@ def main():
     renpy_base = path_to_renpy_base()
 
     # Add paths.
-    if os.path.exists(renpy_base + "/module"):
-        sys.path.append(renpy_base + "/module")
+    if os.path.exists(f'{renpy_base}/module'):
+        sys.path.append(f'{renpy_base}/module')
 
     sys.path.append(renpy_base)
 
     # This is looked for by the mac launcher.
-    if os.path.exists(renpy_base + "/renpy.zip"):
-        sys.path.append(renpy_base + "/renpy.zip")
+    if os.path.exists(f'{renpy_base}/renpy.zip'):
+        sys.path.append(f'{renpy_base}/renpy.zip')
 
     # Ignore warnings that happen.
     warnings.simplefilter("ignore", DeprecationWarning)

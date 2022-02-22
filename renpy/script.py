@@ -115,8 +115,8 @@ class Script(object):
         # we're loading.
         renpy.game.script = self
 
-        if os.path.exists(renpy.config.renpy_base + "/lock.txt"):
-            self.key = open(renpy.config.renpy_base + "/lock.txt", "rb").read()
+        if os.path.exists(f'{renpy.config.renpy_base}/lock.txt'):
+            self.key = open(f'{renpy.config.renpy_base}/lock.txt', "rb").read()
         else:
             self.key = None
 
@@ -204,15 +204,8 @@ class Script(object):
 
             base, ext = os.path.splitext(short_fn)
 
-            if PY2:
-                hex_checksum = checksum[:8].encode("hex")
-            else:
-                hex_checksum = checksum[:8].hex()
-
-            target_fn = os.path.join(
-                backupdir,
-                base + "." + hex_checksum + ext,
-                )
+            hex_checksum = checksum[:8].encode("hex") if PY2 else checksum[:8].hex()
+            target_fn = os.path.join(backupdir, f'{base}.{hex_checksum}{ext}')
 
             if os.path.exists(target_fn):
                 continue
@@ -452,24 +445,21 @@ class Script(object):
                 old_node = self.namemap[name]
 
                 if not isinstance(bad_name, basestring):
-
                     raise ScriptError("Name %s is defined twice, at %s:%d and %s:%d." %
                                       (repr(bad_name),
                                        old_node.filename, old_node.linenumber,
                                        bad_node.filename, bad_node.linenumber))
 
-                else:
+                if renpy.config.allow_duplicate_labels:
+                    return
 
-                    if renpy.config.allow_duplicate_labels:
-                        return
-
-                    self.duplicate_labels.append(
-                        u'The label {} is defined twice, at File "{}", line {}:\n{}and File "{}", line {}:\n{}'.format(
-                            bad_name, old_node.filename, old_node.linenumber,
-                            renpy.parser.get_line_text(old_node.filename, old_node.linenumber),
-                            bad_node.filename, bad_node.linenumber,
-                            renpy.parser.get_line_text(old_node.filename, old_node.linenumber),
-                        ))
+                self.duplicate_labels.append(
+                    u'The label {} is defined twice, at File "{}", line {}:\n{}and File "{}", line {}:\n{}'.format(
+                        bad_name, old_node.filename, old_node.linenumber,
+                        renpy.parser.get_line_text(old_node.filename, old_node.linenumber),
+                        bad_node.filename, bad_node.linenumber,
+                        renpy.parser.get_line_text(old_node.filename, old_node.linenumber),
+                    ))
 
         self.update_bytecode()
 
@@ -591,19 +581,16 @@ class Script(object):
                 raise Exception("Cannot load rpy/rpym file %s from inside an archive." % fn)
 
             base, _, game = dir.rpartition("/")
-            olddir = base + "/old-" + game
+            olddir = f'{base}/old-{game}'
 
-            fullfn = dir + "/" + fn
-            rpycfn = fullfn + "c"
+            fullfn = f'{dir}/{fn}'
+            rpycfn = f'{fullfn}c'
 
-            oldrpycfn = olddir + "/" + fn + "c"
+            oldrpycfn = f'{olddir}/{fn}c'
 
             stmts = renpy.parser.parse(fullfn)
 
-            data = { }
-            data['version'] = script_version
-            data['key'] = self.key or 'unlocked'
-
+            data = {'version': script_version, 'key': self.key or 'unlocked'}
             if stmts is None:
                 return data, [ ]
 
@@ -663,9 +650,7 @@ class Script(object):
             with renpy.loader.load(fn) as f:
                 for slot in [ 2, 1 ]:
                     try:
-                        bindata = self.read_rpyc_data(f, slot)
-
-                        if bindata:
+                        if bindata := self.read_rpyc_data(f, slot):
                             data, stmts = loads(bindata)
                             break
 
@@ -720,8 +705,8 @@ class Script(object):
 
             # Otherwise, we're loading from disk. So we need to decide if
             # we want to load the rpy or the rpyc file.
-            rpyfn = dir + "/" + fn + source
-            rpycfn = dir + "/" + fn + compiled
+            rpyfn = f'{dir}/{fn}{source}'
+            rpycfn = f'{dir}/{fn}{compiled}'
 
             renpy.loader.add_auto(rpyfn)
 
@@ -760,7 +745,7 @@ class Script(object):
                         data, stmts = self.load_file(dir, fn + compiled)
 
                         if data is None:
-                            print("Could not load " + rpycfn)
+                            print(f'Could not load {rpycfn}')
 
                 except Exception:
                     renpy.display.log.write("While loading %r", rpycfn)

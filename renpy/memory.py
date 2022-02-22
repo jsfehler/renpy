@@ -75,7 +75,7 @@ def print_garbage(gen):
             prefix = "cell: "
 
         try:
-            suffix = " (" + inspect.getfile(i) + ")"
+            suffix = f' ({inspect.getfile(i)})'
         except Exception:
             pass
 
@@ -298,7 +298,7 @@ def profile_memory_common(packages=[ "renpy", "store" ], skip_constants=False):
             continue
 
         for name, o in mod.__dict__.items():
-            name = mod_name + "." + name
+            name = f'{mod_name}.{name}'
 
             if skip_constants and name in constant_containers:
                 continue
@@ -339,7 +339,7 @@ def profile_memory(fraction=1.0, minimum=0, skip_constants=False):
 
     write("=" * 78)
     write("")
-    write("Memory profile at " + time.ctime() + ":")
+    write(f'Memory profile at {time.ctime()}:')
     write("")
 
     usage = [ (v, k) for (k, v) in profile_memory_common(skip_constants=skip_constants)[0].items() ]
@@ -353,9 +353,8 @@ def profile_memory(fraction=1.0, minimum=0, skip_constants=False):
 
     for size, name in usage:
 
-        if (remaining - size) < total * fraction:
-            if size > minimum:
-                write("{:13,d} {}".format(size, name))
+        if (remaining - size) < total * fraction and size > minimum:
+            write("{:13,d} {}".format(size, name))
 
         remaining -= size
 
@@ -394,18 +393,15 @@ def diff_memory(update=True, skip_constants=False):
 
     write("=" * 78)
     write("")
-    write("Memory diff at " + time.ctime() + ":")
+    write(f'Memory diff at {time.ctime()}:')
     write("")
 
     usage = profile_memory_common(skip_constants=skip_constants)[0]
     total = sum(usage.values())
 
-    diff = [ ]
-
-    for k, v in usage.items():
-        diff.append((
+    diff = [(
             v - old_usage.get(k, 0),
-            k))
+            k) for k, v in usage.items()]
 
     diff.sort()
 
@@ -437,7 +433,7 @@ def profile_rollback():
 
     write("=" * 78)
     write("")
-    write("Rollback profile at " + time.ctime() + ":")
+    write(f'Rollback profile at {time.ctime()}:')
     write("")
 
     # Profile live memory.
@@ -456,7 +452,7 @@ def profile_rollback():
 
         for store_name, store in rb.stores.items():
             for var_name, o in store.items():
-                name = store_name + "." + var_name
+                name = f'{store_name}.{var_name}'
                 id_o = id(o)
 
                 if (id_o not in seen) and (id_o not in new_seen):
@@ -474,8 +470,12 @@ def profile_rollback():
 
             roots.append((name, roll))
 
-        roots.append(("<scene lists>", rb.context.scene_lists))
-        roots.append(("<context>", rb.context))
+        roots.extend(
+            (
+                ("<scene lists>", rb.context.scene_lists),
+                ("<context>", rb.context),
+            )
+        )
 
     sizes = walk_memory(roots, seen)[0]
 
@@ -546,7 +546,7 @@ def find_parents(cls):
                     if v is objects[-4]:
                         k = k()
                         seen.add(id(k))
-                        queue.append((k, prefix + " (key) "))
+                        queue.append((k, f'{prefix} (key) '))
 
             for i in gc.get_referrers(o):
 
@@ -560,7 +560,7 @@ def find_parents(cls):
                     continue
 
                 seen.add(id(i))
-                queue.append((i, prefix + "  "))
+                queue.append((i, f'{prefix}  '))
                 found = True
                 break
 

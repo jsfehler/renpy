@@ -253,13 +253,13 @@ def nodes_on_line(filename, linenumber):
 
     ensure_loaded(filename)
 
-    rv = [ ]
-
-    for i in renpy.game.script.all_stmts:
-        if (i.filename == filename) and (i.linenumber == linenumber) and (i.rollback != "never"):
-            rv.append(i)
-
-    return rv
+    return [
+        i
+        for i in renpy.game.script.all_stmts
+        if (i.filename == filename)
+        and (i.linenumber == linenumber)
+        and (i.rollback != "never")
+    ]
 
 
 def nodes_on_line_at_or_after(filename, linenumber):

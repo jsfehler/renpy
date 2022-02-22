@@ -83,7 +83,7 @@ added = { }
 
 
 def add(msg, *args):
-    if not msg in added:
+    if msg not in added:
         added[msg] = True
         msg = str(msg) % args
         print(msg)
@@ -244,10 +244,7 @@ def image_exists_precise(name):
         if attrs - required:
             continue
 
-        rest = required - attrs
-
-        if rest:
-
+        if rest := required - attrs:
             try:
                 da = renpy.display.core.DisplayableArguments()
                 da.name = (im[0],) + tuple(i for i in name[1:] if i in attrs) 
@@ -283,9 +280,8 @@ def image_exists(name, expression, tag, precise=True):
     if expression:
         return
 
-    if not precise:
-        if image_exists_imprecise(name):
-            return
+    if not precise and image_exists_imprecise(name):
+        return
 
     # If we're not precise, then we have to start looking for images
     # that we can possibly match.
@@ -346,10 +342,7 @@ def check_image(node):
 def imspec(t):
     if len(t) == 3:
         return t[0], None, None, t[1], t[2], 0, None
-    if len(t) == 6:
-        return t[0], t[1], t[2], t[3], t[4], t[5], None
-    else:
-        return t
+    return (t[0], t[1], t[2], t[3], t[4], t[5], None) if len(t) == 6 else t
 
 
 # Lints ast.Show and ast.Scene nodes.
@@ -431,8 +424,7 @@ def quote_text(s):
 
 def text_checks(s):
 
-    msg = renpy.text.extras.check_text_tags(s)
-    if msg:
+    if msg := renpy.text.extras.check_text_tags(s):
         report("%s (in %s)", msg, quote_text(s))
 
     if "%" in s and renpy.config.old_substitutions:
@@ -583,7 +575,7 @@ def check_redefined(node, kind):
     elif kind == 'define':
         scanned = all_define_statments
 
-        if not (node.operator == "=" and node.index is None):
+        if node.operator != "=" or node.index is not None:
             return
     else:
         return
@@ -602,8 +594,7 @@ def check_redefined(node, kind):
     if full_name in renpy.config.lint_ignore_redefine:
         return
 
-    original_node = scanned.get(full_name)
-    if original_node:
+    if original_node := scanned.get(full_name):
         report(
             "{} {} already defined at {}:{}".format(
                 kind,
@@ -694,11 +685,11 @@ def check_screen(node):
 
 def check_styles():
     for full_name, s in renpy.style.styles.items(): # @UndefinedVariable
-        name = "style." + full_name[0]
+        name = f'style.{full_name[0]}'
         for i in full_name[1:]:
             name += "[{!r}]".format(i)
 
-        check_style("Style " + name, s)
+        check_style(f'Style {name}', s)
 
 
 def humanize(n):
@@ -759,10 +750,9 @@ def common(n):
 
     filename = n.filename.replace("\\", "/")
 
-    if filename.startswith("common/") or filename.startswith("renpy/common/"):
-        return True
-    else:
-        return False
+    return bool(
+        filename.startswith("common/") or filename.startswith("renpy/common/")
+    )
 
 
 def lint():
@@ -899,11 +889,7 @@ def lint():
         if count.blocks <= 0:
             return
 
-        if language is None:
-            s = "The game"
-        else:
-            s = "The {0} translation".format(language)
-
+        s = "The game" if language is None else "The {0} translation".format(language)
         s += """ contains {0} dialogue blocks, containing {1} words
 and {2} characters, for an average of {3:.1f} words and {4:.0f}
 characters per block. """.format(

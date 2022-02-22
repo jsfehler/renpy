@@ -38,7 +38,7 @@ from renpy.compat.pickle import loads, dumps
 always_constants = { 'True', 'False', 'None' }
 
 # The set of names that should be treated as pure functions.
-pure_functions = set(i for i in dir(builtins) if not i.startswith("__"))
+pure_functions = {i for i in dir(builtins) if not i.startswith("__")}
 pure_functions -= { "copyright", "credits", "enumerate", "help", "input", "license", "map", "memoryview", "next", "open", "print", "reversed" }
 pure_functions = {
     # minstore.py
@@ -149,7 +149,7 @@ def pure(fn):
         name = fn.__name__
 
         module = fn.__module__
-        name = module + "." + name
+        name = f'{module}.{name}'
 
     if name.startswith("store."):
         name = name[6:]
@@ -236,8 +236,7 @@ class DeltaSet(object):
             if i not in self.removed:
                 yield i
 
-        for i in self.added:
-            yield i
+        yield from self.added
 
 
 class Analysis(object):
@@ -296,10 +295,7 @@ class Analysis(object):
         Returns NOT_CONST if we're in a non-constant imagemap.
         """
 
-        if self.control.imagemap:
-            return NOT_CONST
-        else:
-            return GLOBAL_CONST
+        return NOT_CONST if self.control.imagemap else GLOBAL_CONST
 
     def exit_loop(self):
         """
@@ -345,7 +341,7 @@ class Analysis(object):
         Marks `name` as a potential local constant.
         """
 
-        if not name in self.not_constant:
+        if name not in self.not_constant:
             self.local_constant.add(name)
             self.global_constant.discard(name)
             self.pure_functions.discard(name)
@@ -388,7 +384,7 @@ class Analysis(object):
                 const, name = check_name(node.value)
 
                 if name is not None:
-                    name = name + "." + node.attr
+                    name = f'{name}.{node.attr}'
 
             else:
                 return check_node(node), None
@@ -538,10 +534,7 @@ class Analysis(object):
 
         node, literal = ccache.ast_eval_literal(expr)
 
-        if literal:
-            return GLOBAL_CONST
-        else:
-            return self.is_constant(node)
+        return GLOBAL_CONST if literal else self.is_constant(node)
 
     def python(self, code):
         """

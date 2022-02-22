@@ -80,18 +80,19 @@ def dump(error):
     if not args.json_dump: # type: ignore
         return
 
-    def name_filter(name, filename): # @ReservedAssignment
+    def name_filter(name, filename):    # @ReservedAssignment
         """
         Returns true if the name is included by the name_filter, or false if it is excluded.
         """
 
         filename = filename.replace("\\", "/")
 
-        if name.startswith("_") and not args.json_dump_private: # type: ignore
-            if name.startswith("__") and name.endswith("__"):
-                pass
-            else:
-                return False
+        if (
+            name.startswith("_")
+            and not args.json_dump_private
+            and (not name.startswith("__") or not name.endswith("__"))
+        ):
+            return False
 
         if not file_exists(filename):
             return False

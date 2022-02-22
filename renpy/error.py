@@ -149,7 +149,7 @@ def open_error_file(fn, mode):
 
     import tempfile
 
-    new_fn = os.path.join(tempfile.gettempdir(), "renpy-" + fn)
+    new_fn = os.path.join(tempfile.gettempdir(), f'renpy-{fn}')
     return open(new_fn, mode), new_fn
 
 
@@ -180,12 +180,12 @@ def report_exception(e, editor=True):
 
     print(str(renpy.game.exception_info), file=simple)
     write_traceback_list(simple, simple_tl)
-    print(type.__name__ + ":", end=' ', file=simple)
+    print(f'{type.__name__}:', end=' ', file=simple)
     print(str(e), file=simple)
 
     print("Full traceback:", file=full)
     write_traceback_list(full, full_tl)
-    print(type.__name__ + ":", end=' ', file=full)
+    print(f'{type.__name__}:', end=' ', file=full)
     print(str(e), file=full)
 
     # Write to stdout/stderr.
@@ -202,7 +202,7 @@ def report_exception(e, editor=True):
     try:
         print(str(platform.platform()), file=full)
         print(renpy.version, file=full)
-        print(renpy.config.name + " " + renpy.config.version, file=full)
+        print(f'{renpy.config.name} {renpy.config.version}', file=full)
         print(str(time.ctime()), file=full)
     except Exception:
         pass

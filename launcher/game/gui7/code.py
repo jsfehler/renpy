@@ -167,9 +167,7 @@ class CodeGenerator(object):
 
         for l in self.lines:
 
-            m = re.match('^(\s*)define (.*?) =', l)
-
-            if m:
+            if m := re.match('^(\s*)define (.*?) =', l):
                 indent = m.group(1)
                 variable = m.group(2)
 
@@ -190,9 +188,7 @@ class CodeGenerator(object):
             lines.append("")
 
             if d.comment:
-                for s in textwrap.wrap(d.comment):
-                    lines.append("## " + s)
-
+                lines.extend(f'## {s}' for s in textwrap.wrap(d.comment))
             lines.append("define {} = {}".format(d.name, d.value))
 
         self.lines = lines
@@ -296,10 +292,7 @@ class CodeGenerator(object):
 
         for l in self.lines:
 
-            m = re.match(r'^(\s*## )(.*)', l.rstrip())
-
-            if m:
-
+            if m := re.match(r'^(\s*## )(.*)', l.rstrip()):
                 indent = m.group(1)
                 c = m.group(2)
 
@@ -309,7 +302,6 @@ class CodeGenerator(object):
                 comment.append(c)
 
             else:
-
                 if comment:
                     s = "## " + ' '.join(comment)
 
@@ -337,13 +329,9 @@ class CodeGenerator(object):
 
                     for i, s in enumerate(renpy.text.extras.textwrap(rest, len_wrap, store.gui.asian)):
 
-                        if i == 0:
-                            s = indent + prefix + s
-                        else:
-                            s = indent + empty + s
-
+                        s = indent + prefix + s if i == 0 else indent + empty + s
                         if hashpad and len(s) < 79:
-                            s = s + ' ' + "#" * (79 - len(s))
+                            s = f'{s} ' + "#" * (79 - len(s))
 
                         lines.append(s)
 
@@ -380,7 +368,7 @@ class CodeGenerator(object):
         if language is None:
             language = "None"
 
-        src = os.path.join(renpy.config.gamedir, "tl", language, name + "m")
+        src = os.path.join(renpy.config.gamedir, "tl", language, f'{name}m')
 
         if not os.path.exists(src):
             src = os.path.join(self.p.template, name)

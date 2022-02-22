@@ -53,7 +53,7 @@ try:
     def select_directory(title):
         result = gtk_select_directory(title)
 
-        return result if result else ''
+        return result or ''
 
 except Exception:
 # Python3 and Python2-style imports.

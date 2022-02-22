@@ -110,7 +110,7 @@ class CompressedList(object):
         # Find an element in the old list corresponding to the pivot.
         old_half = (len(old) - 1) // 2
 
-        for i in range(0, old_half + 1):
+        for i in range(old_half + 1):
 
             if old[old_half - i] is new_pivot:
                 old_center = old_half - i
@@ -206,10 +206,7 @@ class RevertableList(list):
     def __getitem__(self, index):
         rv = list.__getitem__(self, index)
 
-        if isinstance(index, slice):
-            return RevertableList(rv)
-        else:
-            return rv
+        return RevertableList(rv) if isinstance(index, slice) else rv
 
     def __mul__(self, other):
         if not isinstance(other, int):
@@ -347,8 +344,7 @@ class RevertableSet(set):
             self.update(state)
 
     def __getstate__(self):
-        rv = ({ i : True for i in self},)
-        return rv
+        return ({ i : True for i in self},)
 
     # Required to ensure that getstate and setstate are called.
     __reduce__ = object.__reduce__
@@ -381,10 +377,7 @@ class RevertableSet(set):
 
         def newmethod(*args, **kwargs):
             rv = method(*args, **kwargs) # type: ignore
-            if isinstance(rv, (set, frozenset)):
-                return RevertableSet(rv)
-            else:
-                return rv
+            return RevertableSet(rv) if isinstance(rv, (set, frozenset)) else rv
 
         return newmethod
 
@@ -501,11 +494,7 @@ class DetRandom(random.Random):
 
     def random(self):
 
-        if self.stack:
-            rv = self.stack.pop()
-        else:
-            rv = super(DetRandom, self).random()
-
+        rv = self.stack.pop() if self.stack else super(DetRandom, self).random()
         log = renpy.game.log
 
         if log.current is not None:

@@ -121,15 +121,11 @@ def run(restart):
     game.contexts = [ renpy.execution.Context(True) ]
 
     # Jump to an appropriate start label.
-    if game.script.has_label("_start"):
-        start_label = '_start'
-    else:
-        start_label = 'start'
-
+    start_label = '_start' if game.script.has_label("_start") else 'start'
     game.context().goto_label(start_label)
 
     try:
-        renpy.exports.log("--- " + time.ctime())
+        renpy.exports.log(f'--- {time.ctime()}')
         renpy.exports.log("")
     except Exception:
         pass
@@ -267,10 +263,8 @@ def choose_variants():
           ('ontouchstart' in window) ||
             (navigator.maxTouchPoints > 0) ||
             (navigator.msMaxTouchPoints > 0)''')
-        if touch == 1:
-            # mitigate hybrids (e.g. ms surface) by restricting touch to mobile
-            if mobile:
-                renpy.config.variants.insert(0, 'touch') # type: ignore
+        if touch == 1 and mobile:
+            renpy.config.variants.insert(0, 'touch') # type: ignore
 
         # large/medium/small
         # tablet/phone

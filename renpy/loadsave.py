@@ -317,7 +317,7 @@ class SaveRecord(object):
         This writes a standard-format savefile to `filename`.
         """
 
-        filename_new = filename + ".new"
+        filename_new = f'{filename}.new'
 
         # For speed, copy the file after we've written it at least once.
         if self.first_filename is not None:
@@ -437,23 +437,21 @@ def autosave_thread_function(take_screenshot):
 
     try:
 
-        try:
+        cycle_saves("auto-", renpy.config.autosave_slots)
 
-            cycle_saves("auto-", renpy.config.autosave_slots)
+        if renpy.config.auto_save_extra_info:
+            extra_info = renpy.config.auto_save_extra_info()
+        else:
+            extra_info = ""
 
-            if renpy.config.auto_save_extra_info:
-                extra_info = renpy.config.auto_save_extra_info()
-            else:
-                extra_info = ""
+        if take_screenshot:
+            renpy.exports.take_screenshot(background=True)
 
-            if take_screenshot:
-                renpy.exports.take_screenshot(background=True)
+        save("auto-1", mutate_flag=True, extra_info=extra_info)
+        autosave_counter = 0
 
-            save("auto-1", mutate_flag=True, extra_info=extra_info)
-            autosave_counter = 0
-
-        except Exception:
-            pass
+    except Exception:
+        pass
 
     finally:
         autosave_not_running.set()
@@ -622,11 +620,7 @@ def list_saved_games(regexp=r'.', fast=False):
 
         if c is not None:
             json = c.get_json()
-            if json is not None:
-                extra_info = json.get("_save_name", "") # type: ignore
-            else:
-                extra_info = ""
-
+            extra_info = json.get("_save_name", "") if json is not None else ""
             screenshot = c.get_screenshot()
             mtime = c.get_mtime()
 
@@ -735,10 +729,7 @@ def can_load(filename, test=False):
 
     c = get_cache(filename)
 
-    if c.get_mtime():
-        return True
-    else:
-        return False
+    return bool(c.get_mtime())
 
 
 def load(filename):
@@ -921,7 +912,4 @@ def init():
 
 # Save locations are places where saves are saved to or loaded from, or a
 # collection of such locations. This is the default save location.
-location = None
-
-if 1 == 0:
-    location = renpy.savelocation.FileLocation("blah")
+location = renpy.savelocation.FileLocation("blah") if 1 == 0 else None

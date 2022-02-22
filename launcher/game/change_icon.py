@@ -66,20 +66,13 @@ class BinFile(object):
     def name(self):
         c = self.u16()
 
-        rv = u""
-        for _i in range(c):
-            rv += chr(self.u16())
-
-        return rv
+        return u"".join(chr(self.u16()) for _i in range(c))
 
     def seek(self, addr):
         self.addr = addr
 
     def tostring(self):
-        if PY2:
-            return self.a.tostring() # type: ignore
-        else:
-            return self.a.tobytes()
+        return self.a.tostring() if PY2 else self.a.tobytes()
 
     def substring(self, start, len): # @ReservedAssignment
         if PY2:
@@ -113,12 +106,8 @@ def parse_data(bf, offset):
     code_page = bf.u32()
     bf.u32()
 
-    l = [ ]
-
     bf.seek(data_offset - resource_virtual)
-    for _i in range(data_len):
-        l.append(bchr(bf.u8()))
-
+    l = [bchr(bf.u8()) for _i in range(data_len)]
     return (code_page, b"".join(l))
 
 # This parses a resource directory.
@@ -134,10 +123,7 @@ def parse_directory(bf, offset):
     n_named = bf.u16()
     n_id = bf.u16()
 
-    entries = [ ]
-
-    for _i in range(n_named + n_id):
-        entries.append((bf.u32(), bf.u32()))
+    entries = [(bf.u32(), bf.u32()) for _i in range(n_named + n_id)]
 
     rv = { }
 
@@ -167,7 +153,7 @@ def show_resources(d, prefix):
 
     for k in d:
         print(prefix, k)
-        show_resources(d[k], prefix + "  ")
+        show_resources(d[k], f'{prefix}  ')
 
 ##############################################################################
 # These functions repack the resources into a new resource segment. Here,
@@ -259,9 +245,7 @@ def load_icon(fn):
     f.u16()
     count = f.u16()
 
-    rv = { }
-    rv[3] = { }
-
+    rv = {3: {}}
     group = struct.pack("HHH", 0, 1, count)
 
     for i in range(count):
@@ -315,25 +299,9 @@ def change_icons(oldexe, icofn):
     physize = rsrc_section.SizeOfRawData
     virsize = rsrc_section.Misc_VirtualSize
 
-    f = open(oldexe, "rb")
-    basedata = f.read(base)
-    data = f.read(physize)
-
-    #Symbol table, I could not understand so well
-    #  Some analysis and the little I could find on how the symbol tables were layed out show that the PE table is in two sections. One is
-    # a list of NumberOfSymbols*(18 bytes) symbol entries, followed immediately by a string table who's length is specified in the 4 bytes following the symbol structure list
-    #Again, the information *seems* to indicate that this will always follow the entire block of all sections (so be at the end of the file)
-
-
-    ######
-    # As a related note, apparently this flag has been deprecated, but appears to be set (I think ..) in the renpy.exe that is used to build from..
-    # no idea of a consequence, just an observation
-    # https://docs.microsoft.com/en-us/windows/win32/debug/pe-format#characteristics , see "IMAGE_FILE_LINE_NUMS_STRIPPED" :
-    #	COFF line numbers have been removed. This flag is deprecated and should be zero.
-    # In renpy.exe, this 2-byte  flag is @ 0x096 and 0x097  in little-endian
-    ######
-
-    f.close()
+    with open(oldexe, "rb") as f:
+        basedata = f.read(base)
+        data = f.read(physize)
 
     bf = BinFile(data)
 
@@ -423,6 +391,5 @@ def change_icons(oldexe, icofn):
 
 if __name__ == "__main__":
 
-    f = open(sys.argv[3], "wb")
-    f.write(change_icons(sys.argv[1], sys.argv[2]))
-    f.close()
+    with open(sys.argv[3], "wb") as f:
+        f.write(change_icons(sys.argv[1], sys.argv[2]))

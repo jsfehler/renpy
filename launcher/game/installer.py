@@ -94,7 +94,7 @@ def _path(filename):
 
     if prefix == "backup":
         base = os.path.basename(rest.rpartition(":")[2])
-        return os.path.join(backups, base + "." + str(time.time()))
+        return os.path.join(backups, f'{base}.{str(time.time())}')
 
     if target is None:
         raise Exception("The target directory has not been set.")
@@ -153,9 +153,8 @@ def download(url, filename, hash=None):
 
     filename = _path(filename)
 
-    if hash is not None:
-        if _check_hash(filename, hash):
-            return
+    if hash is not None and _check_hash(filename, hash):
+        return
 
     progress_time = time.time()
 
@@ -315,7 +314,7 @@ def remove(filename):
     if not exists(filename):
         return
 
-    shutil.move(_path(filename), _path("backup:" + filename))
+    shutil.move(_path(filename), _path(f'backup:{filename}'))
 
 
 def move(old_filename, new_filename):
@@ -410,7 +409,7 @@ def manifest(url, renpy=False, insecure=False):
         manifest = f.read()
 
     if not insecure:
-        download(url + ".sig", "temp:manifest.py.sig")
+        download(f'{url}.sig', "temp:manifest.py.sig")
 
         with open(_path("temp:manifest.py.sig"), "rb") as f:
             sig = f.read()

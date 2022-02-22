@@ -40,9 +40,8 @@ def copy_tutorial_file(src, dest):
                 copy = False
             elif "# end-tutorial-only" in l:
                 copy = True
-            else:
-                if copy:
-                    df.write(l)
+            elif copy:
+                df.write(l)
 
 
 def main():
@@ -128,18 +127,14 @@ def main():
     destination = os.path.join("dl", args.version)
 
     if args.variant:
-        destination += "-" + args.variant
+        destination += f'-{args.variant}'
 
     if os.path.exists(os.path.join(destination, "checksums.txt")):
         raise Exception("The checksums.txt file exists.")
 
     print("Version {} ({})".format(args.version, full_version))
 
-    if sys.version_info[0] >= 3:
-        renpy_sh = "./renpy3.sh"
-    else:
-        renpy_sh = "./renpy2.sh"
-
+    renpy_sh = "./renpy3.sh" if sys.version_info[0] >= 3 else "./renpy2.sh"
     # Perhaps autobuild.
     if "RENPY_BUILD_ALL" in os.environ:
         print("Autobuild...")
@@ -219,16 +214,19 @@ def main():
 
     # Package pygame_sdl2.
     if not args.fast:
-        subprocess.check_call([
-            "pygame_sdl2/setup.py",
-            "-q",
-            "egg_info",
-            "--tag-build",
-            "-for-renpy-" + args.version,
-            "sdist",
-            "-d",
-            os.path.abspath(destination)
-            ])
+        subprocess.check_call(
+            [
+                "pygame_sdl2/setup.py",
+                "-q",
+                "egg_info",
+                "--tag-build",
+                f'-for-renpy-{args.version}',
+                "sdist",
+                "-d",
+                os.path.abspath(destination),
+            ]
+        )
+
 
     # Write 7z.exe.
     sdk = "renpy-{}-sdk".format(args.version)
@@ -245,14 +243,14 @@ def main():
         if os.path.exists(sdk):
             shutil.rmtree(sdk)
 
-        subprocess.check_call([ "unzip", "-q", sdk + ".zip" ])
+        subprocess.check_call(["unzip", "-q", f'{sdk}.zip'])
 
-        if os.path.exists(sdk + ".7z"):
-            os.unlink(sdk + ".7z")
+        if os.path.exists(f'{sdk}.7z'):
+            os.unlink(f'{sdk}.7z')
 
         sys.stdout.write("Creating -sdk.7z")
 
-        p = subprocess.Popen([ "7z", "a", sdk + ".7z", sdk], stdout=subprocess.PIPE)
+        p = subprocess.Popen(["7z", "a", f'{sdk}.7z', sdk], stdout=subprocess.PIPE)
         for i, _l in enumerate(p.stdout): # type: ignore
             if i % 10 != 0:
                 continue
@@ -263,21 +261,21 @@ def main():
         if p.wait() != 0:
             raise Exception("7z failed")
 
-        with open(sdk + ".7z", "rb") as f:
+        with open(f'{sdk}.7z', "rb") as f:
             data = f.read()
 
-        with open(sdk + ".7z.exe", "wb") as f:
+        with open(f'{sdk}.7z.exe', "wb") as f:
             f.write(sfx)
             f.write(data)
 
-        os.unlink(sdk + ".7z")
+        os.unlink(f'{sdk}.7z')
         shutil.rmtree(sdk)
 
     else:
         os.chdir(destination)
 
-        if os.path.exists(sdk + ".7z.exe"):
-            os.unlink(sdk + ".7z.exe")
+        if os.path.exists(f'{sdk}.7z.exe'):
+            os.unlink(f'{sdk}.7z.exe')
 
     print()
 

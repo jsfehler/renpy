@@ -43,7 +43,7 @@ disk_lock = threading.RLock()
 # A suffix used to disambguate temporary files being written by multiple
 # processes.
 import time
-tmp = "." + str(int(time.time())) + ".tmp"
+tmp = f'.{int(time.time())}.tmp'
 
 
 class FileLocation(object):
@@ -140,7 +140,7 @@ class FileLocation(object):
                 if slotname not in new_mtimes:
                     clear_slot(slotname)
 
-            for pfn in [ self.persistent + ".new", self.persistent ]:
+            for pfn in [f'{self.persistent}.new', self.persistent]:
                 if os.path.exists(pfn):
                     mtime = os.path.getmtime(pfn)
 
@@ -239,12 +239,13 @@ class FileLocation(object):
             except Exception:
                 return None
 
-            if png:
-                screenshot = renpy.display.im.ZipFileImage(filename, "screenshot.png", mtime)
-            else:
-                screenshot = renpy.display.im.ZipFileImage(filename, "screenshot.tga", mtime)
-
-            return screenshot
+            return (
+                renpy.display.im.ZipFileImage(filename, "screenshot.png", mtime)
+                if png
+                else renpy.display.im.ZipFileImage(
+                    filename, "screenshot.tga", mtime
+                )
+            )
 
     def load(self, slotname):
         """
@@ -339,7 +340,7 @@ class FileLocation(object):
 
             fn = self.persistent
             fn_tmp = fn + tmp
-            fn_new = fn + ".new"
+            fn_new = f'{fn}.new'
 
             with open(fn_tmp, "wb") as f:
                 f.write(data)
@@ -403,10 +404,9 @@ class MultiLocation(object):
 
             slot_mtime = l.mtime(slotname)
 
-            if slot_mtime is not None:
-                if slot_mtime > mtime:
-                    mtime = slot_mtime
-                    location = l
+            if slot_mtime is not None and slot_mtime > mtime:
+                mtime = slot_mtime
+                location = l
 
         return location
 

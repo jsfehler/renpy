@@ -38,11 +38,7 @@ if args.delete_tag:
 
         os.chdir(i)
 
-        if i == SOURCE[0]:
-            tag = args.delete_tag
-        else:
-            tag = "renpy-" + args.delete_tag
-
+        tag = args.delete_tag if i == SOURCE[0] else f'renpy-{args.delete_tag}'
         subprocess.call([ "git", "tag", "-d", tag, ])
 
     sys.exit(0)
@@ -86,11 +82,7 @@ if tag:
 
         os.chdir(i)
 
-        if i == SOURCE[0]:
-            tag = version
-        else:
-            tag = "renpy-" + version
-
+        tag = version if i == SOURCE[0] else f'renpy-{version}'
         subprocess.check_call([ "git", "tag", "-a", tag, "-m", "Tagging Ren'Py + " + version + " release." ])
 
 os.chdir("/home/tom/ab/renpy/dl")

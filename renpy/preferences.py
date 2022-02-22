@@ -70,7 +70,7 @@ class Preference(object):
     def __init__(self, name, default, types=None):
         self.name = name
         self.default = default
-        self.types = types if types else type(default)
+        self.types = types or type(default)
 
         all_preferences.append(self)
 
@@ -277,10 +277,7 @@ class Preferences(renpy.object.Object):
             self.volumes[mixer] = 1.0
 
     def get_mute(self, mixer):
-        if mixer not in self.volumes:
-            return False
-
-        return self.mute[mixer]
+        return False if mixer not in self.volumes else self.mute[mixer]
 
     def init_mixers(self):
         for i in renpy.audio.music.get_all_mixers():
