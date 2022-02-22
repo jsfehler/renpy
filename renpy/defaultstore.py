@@ -106,11 +106,10 @@ class _Config(object):
         if name == "script_version":
             renpy.store._set_script_version(value) # type: ignore
 
-        if name == "developer":
-            if value == "auto":
-                renpy.config.original_developer = value
-                renpy.config.developer = renpy.config.default_developer
-                return
+        if name == "developer" and value == "auto":
+            renpy.config.original_developer = value
+            renpy.config.developer = renpy.config.default_developer
+            return
 
         cvars[name] = value
 

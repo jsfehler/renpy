@@ -30,15 +30,22 @@ class Editor(renpy.editor.Editor):
             RENPY_VSCODE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "vscode"))
 
             if renpy.windows:
-                code = os.path.join(RENPY_VSCODE, "VSCode-win32-x64", "bin", "code.cmd")
+                return os.path.join(RENPY_VSCODE, "VSCode-win32-x64", "bin", "code.cmd")
             elif renpy.macintosh:
-                code = os.path.join(RENPY_VSCODE, "Visual Studio Code.app", "Contents", "Resources", "app", "bin", "code")
-            elif renpy.linux:
-                code = os.path.join(RENPY_VSCODE, "VSCode-linux-x64", "bin", "code")
-            else:
-                code = "code"
+                return os.path.join(
+                    RENPY_VSCODE,
+                    "Visual Studio Code.app",
+                    "Contents",
+                    "Resources",
+                    "app",
+                    "bin",
+                    "code",
+                )
 
-            return code
+            elif renpy.linux:
+                return os.path.join(RENPY_VSCODE, "VSCode-linux-x64", "bin", "code")
+            else:
+                return "code"
 
     def open(self, filename, line=None, **kwargs):
         if line:

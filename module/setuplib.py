@@ -72,11 +72,7 @@ cython_command = os.environ.get("RENPY_CYTHON", "cython")
 if not (android or ios):
     install = os.environ.get("RENPY_DEPS_INSTALL", "/usr")
 
-    if "::" in install:
-        install = install.split("::")
-    else:
-        install = install.split(os.pathsep)
-
+    install = install.split("::") if "::" in install else install.split(os.pathsep)
     install = [ os.path.abspath(i) for i in install ]
 
     if "VIRTUAL_ENV" in os.environ:
@@ -153,7 +149,7 @@ def library(name, optional=False):
 
             for suffix in (".so", ".a", ".dll.a", ".dylib"):
 
-                fn = os.path.join(ldir, "lib" + name + suffix)
+                fn = os.path.join(ldir, f'lib{name}{suffix}')
 
                 if os.path.exists(fn):
 
@@ -217,16 +213,10 @@ def cython(name, source=[], libs=[], includes=[], compile_if=True, define_macros
     # Find the pyx file.
     split_name = name.split(".")
 
-    if pyx is not None:
-        fn = pyx
-    else:
-        fn = "/".join(split_name) + ".pyx"
-
+    fn = pyx if pyx is not None else "/".join(split_name) + ".pyx"
     if os.path.exists(os.path.join("..", fn)):
         fn = os.path.join("..", fn)
-    elif os.path.exists(fn):
-        pass
-    else:
+    elif not os.path.exists(fn):
         print("Could not find {0}.".format(fn))
         sys.exit(-1)
 
@@ -237,18 +227,15 @@ def cython(name, source=[], libs=[], includes=[], compile_if=True, define_macros
 
     with open(fn) as f:
         for l in f:
-            m = re.search(r'from\s*([\w.]+)\s*cimport', l)
-            if m:
+            if m := re.search(r'from\s*([\w.]+)\s*cimport', l):
                 deps.append(m.group(1).replace(".", "/") + ".pxd")
                 continue
 
-            m = re.search(r'cimport\s*([\w.]+)', l)
-            if m:
+            if m := re.search(r'cimport\s*([\w.]+)', l):
                 deps.append(m.group(1).replace(".", "/") + ".pxd")
                 continue
 
-            m = re.search(r'include\s*"(.*?)"', l)
-            if m:
+            if m := re.search(r'include\s*"(.*?)"', l):
                 deps.append(m.group(1))
                 continue
 
@@ -258,17 +245,13 @@ def cython(name, source=[], libs=[], includes=[], compile_if=True, define_macros
     # Determine if any of the dependencies are newer than the c file.
 
     if language == "c++":
-        c_fn = os.path.join(gen, name + ".cc")
-        necessary_gen.append(name + ".cc")
+        c_fn = os.path.join(gen, f'{name}.cc')
+        necessary_gen.append(f'{name}.cc')
     else:
-        c_fn = os.path.join(gen, name + ".c")
-        necessary_gen.append(name + ".c")
+        c_fn = os.path.join(gen, f'{name}.c')
+        necessary_gen.append(f'{name}.c')
 
-    if os.path.exists(c_fn):
-        c_mtime = os.path.getmtime(c_fn)
-    else:
-        c_mtime = 0
-
+    c_mtime = os.path.getmtime(c_fn) if os.path.exists(c_fn) else 0
     out_of_date = False
 
     # print c_fn, "depends on", deps
@@ -283,9 +266,7 @@ def cython(name, source=[], libs=[], includes=[], compile_if=True, define_macros
             dep_fn = os.path.join("include", dep_fn)
         elif os.path.exists(os.path.join(gen, dep_fn)):
             dep_fn = os.path.join(gen, dep_fn)
-        elif os.path.exists(dep_fn):
-            pass
-        else:
+        elif not os.path.exists(dep_fn):
             print("{0} depends on {1}, which can't be found.".format(fn, dep_fn))
             sys.exit(-1)
 
@@ -317,34 +298,42 @@ def generate_cython(name, language, mod_coverage, split_name, fn, c_fn):
     import subprocess
     global cython_failure
 
-    if language == "c++":
-        lang_args = [ "--cplus" ]
-    else:
-        lang_args = [ ]
+    lang_args = [ "--cplus" ] if language == "c++" else [ ]
+    annotate = [ "-a" ] if "RENPY_ANNOTATE_CYTHON" in os.environ else [ ]
+    coverage_args = [ "-X", "linetrace=true" ] if mod_coverage else [ ]
+    p = subprocess.Popen(
+        (
+            (
+                (
+                    (
+                        [
+                            cython_command,
+                            "-Iinclude",
+                            f'-I{gen}',
+                            "-I..",
+                            "--3str",
+                        ]
+                        + annotate
+                    )
+                    + lang_args
+                )
+                + coverage_args
+            )
+            + [
+                "-X",
+                "profile=False",
+                "-X",
+                "embedsignature=True",
+                fn,
+                "-o",
+                c_fn,
+            ]
+        ),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
 
-    if "RENPY_ANNOTATE_CYTHON" in os.environ:
-        annotate = [ "-a" ]
-    else:
-        annotate = [ ]
 
-    if mod_coverage:
-        coverage_args = [ "-X", "linetrace=true" ]
-    else:
-        coverage_args = [ ]
-
-    p = subprocess.Popen([
-            cython_command,
-            "-Iinclude",
-            "-I" + gen,
-            "-I..",
-            "--3str",
-            ] + annotate + lang_args + coverage_args + [
-            "-X", "profile=False",
-            "-X", "embedsignature=True",
-            fn,
-            "-o",
-            c_fn], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    
     stdout, stderr = p.communicate()
 
     with lock:
@@ -365,7 +354,7 @@ def generate_cython(name, language, mod_coverage, split_name, fn, c_fn):
         with open(c_fn, 'r') as f:
             ccode = f.read()
 
-        with open(c_fn + ".dynamic", 'w') as f:
+        with open(f'{c_fn}.dynamic', 'w') as f:
             f.write(ccode)
 
         if len(split_name) > 1:
@@ -454,9 +443,8 @@ def copyfile(source, dest, replace=None, replace_with=None):
     sfn = os.path.join("..", source)
     dfn = os.path.join("..", dest)
 
-    if os.path.exists(dfn):
-        if os.path.getmtime(sfn) <= os.path.getmtime(dfn):
-            return
+    if os.path.exists(dfn) and os.path.getmtime(sfn) <= os.path.getmtime(dfn):
+        return
 
     with open(sfn, "r") as sf:
         data = sf.read()
@@ -465,7 +453,7 @@ def copyfile(source, dest, replace=None, replace_with=None):
         data = data.replace(replace, replace_with)
 
     with open(dfn, "w") as df:
-        df.write("# This file was automatically generated from " + source + "\n")
+        df.write(f'# This file was automatically generated from {source}' + "\n")
         df.write("# Modifications will be automatically overwritten.\n\n")
         df.write(data)
 

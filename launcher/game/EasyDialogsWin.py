@@ -308,11 +308,10 @@ def Message(msg, id=260, ok=None):
         if uMsg == WM_COMMAND and LOWORD(wParam) == IDOK:
             user32.EndDialog(hwnd, IDOK)
             return True
-        if uMsg == WM_COMMAND and LOWORD(wParam) == IDCANCEL:
-            user32.EndDialog(hwnd, IDCANCEL)
-            return True
-        else:
+        if uMsg != WM_COMMAND or LOWORD(wParam) != IDCANCEL:
             return False
+        user32.EndDialog(hwnd, IDCANCEL)
+        return True
 
     # This next line is needed to prevent gc of the callback
     myDialogProc = DialogProc(DlgProc)
@@ -346,11 +345,10 @@ def AskString(prompt, default = '', id=261, ok=None, cancel=None):
             result[0] = crlf2lf(GetText(user32.GetDlgItem(hwnd, 1004)))
             user32.EndDialog(hwnd, IDOK)
             return True
-        if uMsg == WM_COMMAND and LOWORD(wParam) == IDCANCEL:
-            user32.EndDialog(hwnd, IDCANCEL)
-            return True
-        else:
+        if uMsg != WM_COMMAND or LOWORD(wParam) != IDCANCEL:
             return False
+        user32.EndDialog(hwnd, IDCANCEL)
+        return True
 
     # This next line is needed to prevent gc of the callback
     myDialogProc = DialogProc(DlgProc)
@@ -450,11 +448,10 @@ class ProgressBar:
             if uMsg == WM_COMMAND and LOWORD(wParam) == IDOK:
                 user32.EndDialog(hwnd, IDOK)
                 return True
-            if uMsg == WM_COMMAND and LOWORD(wParam) == IDCANCEL:
-                user32.EndDialog(hwnd, IDCANCEL)
-                return True
-            else:
+            if uMsg != WM_COMMAND or LOWORD(wParam) != IDCANCEL:
                 return False
+            user32.EndDialog(hwnd, IDCANCEL)
+            return True
 
         # Why a function attribute? Originally nested scopes
         # were used to get at self._label. This caused a cyclic reference
@@ -504,9 +501,7 @@ class ProgressBar:
     def _update(self, value):
         maxval = self.maxval
         progbar = user32.GetDlgItem(self.hwnd, 1003)
-        if maxval == 0:     # an indeterminate bar
-            # make the bar grow and wrap around in case Marquee bars aren't supported
-            pass
+        if maxval == 0: # an indeterminate bar
             pos = user32.SendMessageA(progbar, PBM_GETPOS, 0, 0)
             user32.SendMessageA(progbar, PBM_SETRANGE, 0, MAKELPARAM(0, 10))
             user32.SendMessageA(progbar, PBM_SETPOS, (pos+1) % 10, 0)
@@ -775,8 +770,7 @@ def AskFolder(
                 label = unicode(actionButtonLabel, errors='replace')
                 user32.SendMessageW(hwnd, BFFM_SETOKTEXT, 0, label)
             if cancelButtonLabel:
-                cancelButton = user32.GetDlgItem(hwnd, IDCANCEL)
-                if cancelButton:
+                if cancelButton := user32.GetDlgItem(hwnd, IDCANCEL):
                     user32.SetWindowTextA(cancelButton, cancelButtonLabel)
             if windowTitle:
                 user32.SetWindowTextA(hwnd, windowTitle)
@@ -834,11 +828,8 @@ ARGV_CMDLINE_DATA=14
 
 def _setmenu(control, items):
     for item in items:
-        if type(item) == type(()):
-            label = item[0]
-        else:
-            label = item
-        if label[-1] == '=' or label[-1] == ':':
+        label = item[0] if type(item) == type(()) else item
+        if label[-1] in ['=', ':']:
             label = label[:-1]
         user32.SendMessageA(control, CB_ADDSTRING, 0, label)
     user32.SendMessageA(control, CB_SETCURSEL, 0, 0)
@@ -848,26 +839,18 @@ def _selectoption(d, optionlist, idx):
         user32.MessageBeep(-1)
         return
     option = optionlist[idx]
-    if type(option) == type(()):
-        if len(option) == 4:
-            help = option[2]
-        elif len(option) > 1:
-            help = option[-1]
-        else:
-            help = ''
+    if type(option) == type(()) and len(option) == 4:
+        help = option[2]
+    elif type(option) == type(()) and len(option) > 1:
+        help = option[-1]
     else:
         help = ''
     h = user32.GetDlgItem(d, ARGV_OPTION_EXPLAIN)
     if help and len(help) > 250:
-        help = help[:250] + '...'
+        help = f'{help[:250]}...'
     user32.SetWindowTextA(h, help)
-    hasvalue = 0
-    if type(option) == type(()):
-        label = option[0]
-    else:
-        label = option
-    if label[-1] == '=' or label[-1] == ':':
-        hasvalue = 1
+    label = option[0] if type(option) == type(()) else option
+    hasvalue = 1 if label[-1] in ['=', ':'] else 0
     h = user32.GetDlgItem(d, ARGV_OPTION_VALUE)
     user32.SetWindowTextA(h, '')
     if hasvalue:
@@ -925,16 +908,13 @@ def GetArgv(optionlist=None, commandlist=None, addoldfile=1, addnewfile=1, addfo
                     option = optionlist[idx]
                     if type(option) == type(()):
                         option = option[0]
-                    if option[-1] == '=' or option[-1] == ':':
+                    if option[-1] in ['=', ':']:
                         option = option[:-1]
                         h = user32.GetDlgItem(hwnd, ARGV_OPTION_VALUE)
                         value = GetText(h)
                     else:
                         value = ''
-                    if len(option) == 1:
-                        stringtoadd = '-' + option
-                    else:
-                        stringtoadd = '--' + option
+                    stringtoadd = f'-{option}' if len(option) == 1 else f'--{option}'
                     stringstoadd[:] = [stringtoadd]
                     if value:
                         stringstoadd.append(value)
@@ -957,16 +937,13 @@ def GetArgv(optionlist=None, commandlist=None, addoldfile=1, addnewfile=1, addfo
                 else:
                     user32.MessageBeep(-1)
             elif n == ARGV_ADD_OLDFILE:
-                pathname = AskFileForOpen()
-                if pathname:
+                if pathname := AskFileForOpen():
                     stringstoadd = [pathname]
             elif n == ARGV_ADD_NEWFILE:
-                pathname = AskFileForSave()
-                if pathname:
+                if pathname := AskFileForSave():
                     stringstoadd = [pathname]
             elif n == ARGV_ADD_FOLDER:
-                pathname = AskFolder()
-                if pathname:
+                if pathname := AskFolder():
                     stringstoadd = [pathname]
 
             for stringtoadd in stringstoadd:
@@ -975,10 +952,10 @@ def GetArgv(optionlist=None, commandlist=None, addoldfile=1, addnewfile=1, addfo
                 h = user32.GetDlgItem(hwnd, ARGV_CMDLINE_DATA)
                 oldstr = GetText(h)
                 if oldstr and oldstr[-1] != ' ':
-                    oldstr = oldstr + ' '
+                    oldstr = f'{oldstr} '
                 oldstr = oldstr + stringtoadd
                 if oldstr[-1] != ' ':
-                    oldstr = oldstr + ' '
+                    oldstr = f'{oldstr} '
                 user32.SetWindowTextA(h, oldstr)
                 user32.SendMessageA(user32.GetDlgItem(hwnd, ARGV_CMDLINE_DATA), EM_SETSEL, 0, -1)
 
@@ -1035,11 +1012,12 @@ def test():
     ok = AskYesNoCancel("Do you want to identify?", yes="Identify", no="No")
     if ok > 0:
         s = AskString("Enter your first name", "Joe")
-        s2 = AskPassword("Okay %s, tell us your nickname"%s, s, cancel="None")
-        if not s2:
-            Message("%s has no secret nickname"%s)
-        else:
+        if s2 := AskPassword(
+            "Okay %s, tell us your nickname" % s, s, cancel="None"
+        ):
             Message("Hello everybody!!\nThe secret nickname of %s is %s!!!"%(s, s2))
+        else:
+            Message("%s has no secret nickname"%s)
     else:
         s = 'Anonymous'
     rv = AskFileForOpen(message="Gimme a file, %s"%s, wanted=Carbon.File.FSSpec)
@@ -1054,7 +1032,7 @@ def test():
     try:
         if hasattr(MacOS, 'SchedParams'):
             appsw = MacOS.SchedParams(1, 0)
-        for i in xrange(20):
+        for _ in xrange(20):
             bar.inc()
             time.sleep(0.05)
         bar.set(0,100)

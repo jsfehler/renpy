@@ -100,33 +100,30 @@ class ParameterInfo(object):
             kwargs = { }
 
         for name, value in zip(self.positional, args):
-            if name in values:
-                if not ignore_errors:
-                    raise Exception("Parameter %s has two values." % name)
+            if name in values and not ignore_errors:
+                raise Exception("Parameter %s has two values." % name)
 
             values[name] = value
 
         extrapos = tuple(args[len(self.positional):])
 
         for name, value in kwargs.items():
-            if name in values:
-                if not ignore_errors:
-                    raise Exception("Parameter %s has two values." % name)
+            if name in values and not ignore_errors:
+                raise Exception("Parameter %s has two values." % name)
 
             values[name] = value
 
         for name, default in self.parameters:
 
-            if name not in values:
-                if default is None:
-                    if not ignore_errors:
-                        raise Exception("Required parameter %s has no value." % name)
-                else:
-                    rv[name] = renpy.python.py_eval(default)
-
-            else:
+            if name in values:
                 rv[name] = values[name]
                 del values[name]
+
+            elif default is None:
+                if not ignore_errors:
+                    raise Exception("Required parameter %s has no value." % name)
+            else:
+                rv[name] = renpy.python.py_eval(default)
 
         # Now, values has the left-over keyword arguments, and extrapos
         # has the left-over positional arguments.
@@ -209,10 +206,10 @@ class ArgumentInfo(object):
                 l.append(expression)
 
         if self.extrapos is not None:
-            l.append("*" + self.extrapos)
+            l.append(f'*{self.extrapos}')
 
         if self.extrakw is not None:
-            l.append("**" + self.extrakw)
+            l.append(f'**{self.extrakw}')
 
         return "(" + ", ".join(l) + ")"
 
@@ -259,7 +256,7 @@ def probably_side_effect_free(expr):
     doesn't allow for a function call.
     """
 
-    return not ("(" in expr)
+    return "(" not in expr
 
 
 class PyCode(object):
@@ -293,11 +290,7 @@ class PyCode(object):
         if isinstance(source, PyExpr):
             loc = (source.filename, source.linenumber, source)
 
-        if PY2:
-            self.py = 2
-        else:
-            self.py = 3
-
+        self.py = 2 if PY2 else 3
         # The source code.
         self.source = source
 
@@ -361,11 +354,10 @@ class Scry(object):
     def next(self): # @ReservedAssignment
         if self._next is None:
             return None
-        else:
-            try:
-                return self._next.scry()
-            except Exception:
-                return None
+        try:
+            return self._next.scry()
+        except Exception:
+            return None
 
 
 class Node(object):
@@ -488,10 +480,7 @@ class Node(object):
         renpy.display.predict.screen to be called as necessary.
         """
 
-        if self.next:
-            return [ self.next ]
-        else:
-            return [ ]
+        return [ self.next ] if self.next else [ ]
 
     def scry(self):
         """
@@ -624,10 +613,7 @@ class Say(Node):
             self.who = who.strip()
 
             # True if who is a simple enough expression we can just look it up.
-            if re.match(renpy.parser.word_regexp + "$", self.who):
-                self.who_fast = True
-            else:
-                self.who_fast = False
+            self.who_fast = bool(re.match(f'{renpy.parser.word_regexp}$', self.who))
         else:
             self.who = None
             self.who_fast = False
@@ -671,17 +657,13 @@ class Say(Node):
             rv.append("nointeract")
 
         if getattr(self, "identifier", None):
-            rv.append("id")
-            rv.append(getattr(self, "identifier", None))
-
+            rv.extend(("id", getattr(self, "identifier", None)))
         if self.arguments:
             rv.append(self.arguments.get_code())
 
         # This has to be at the end.
         if self.with_:
-            rv.append("with")
-            rv.append(self.with_)
-
+            rv.extend(("with", self.with_))
         return " ".join(rv)
 
     def execute(self):
@@ -1159,11 +1141,7 @@ def show_imspec(imspec, atl=None):
         zorder = None
         behind = [ ]
 
-    if zorder is not None:
-        zorder = renpy.python.py_eval(zorder)
-    else:
-        zorder = None
-
+    zorder = renpy.python.py_eval(zorder) if zorder is not None else None
     if expression is not None:
         expression = renpy.python.py_eval(expression)
         expression = renpy.easy.displayable(expression)
@@ -1325,11 +1303,7 @@ class Scene(Node):
 
     def diff_info(self):
 
-        if self.imspec:
-            data = tuple(self.imspec[0])
-        else:
-            data = None
-
+        data = tuple(self.imspec[0]) if self.imspec else None
         return (Scene, data)
 
     def execute(self):
@@ -1451,19 +1425,13 @@ class With(Node):
 
         trans = renpy.python.py_eval(self.expr)
 
-        if self.paired is not None:
-            paired = renpy.python.py_eval(self.paired)
-        else:
-            paired = None
-
+        paired = renpy.python.py_eval(self.paired) if self.paired is not None else None
         renpy.exports.with_statement(trans, paired)
 
     def predict(self):
 
         try:
-            trans = renpy.python.py_eval(self.expr)
-
-            if trans:
+            if trans := renpy.python.py_eval(self.expr):
                 renpy.display.predict.displayable(trans(old_widget=None, new_widget=None))
 
         except Exception:
@@ -1572,13 +1540,11 @@ class Return(Node):
 
         ctx = renpy.game.context()
 
-        if renpy.game.context().init_phase:
-            if len(ctx.return_stack) == 0:
+        if renpy.game.context().init_phase and len(ctx.return_stack) == 0:
+            if renpy.config.developer:
+                raise Exception("Unexpected return during the init phase.")
 
-                if renpy.config.developer:
-                    raise Exception("Unexpected return during the init phase.")
-
-                return
+            return
 
         next_node(renpy.game.context().lookup_return(pop=True))
         renpy.game.context().pop_dynamic()
@@ -1796,11 +1762,7 @@ class Jump(Node):
 
     def scry(self):
         rv = Node.scry(self)
-        if self.expression:
-            rv._next = None
-        else:
-            rv._next = renpy.game.script.lookup(self.target)
-
+        rv._next = None if self.expression else renpy.game.script.lookup(self.target)
         return rv
 
 
@@ -2040,11 +2002,7 @@ class UserStatement(Node):
         if self.parsed and renpy.statements.get("predict_all", self.parsed):
             return [ i.block[0] for i in self.subparses ] + [ self.next ]
 
-        if self.next:
-            next_label = self.next.name
-        else:
-            next_label = None
-
+        next_label = self.next.name if self.next else None
         next_list = self.call("predict_next", next_label)
 
         if next_list is not None:
@@ -2069,10 +2027,7 @@ class UserStatement(Node):
         else:
             rv = self.call("next")
 
-        if rv is not None:
-            return renpy.game.script.lookup(rv)
-        else:
-            return self.next
+        return renpy.game.script.lookup(rv) if rv is not None else self.next
 
     def scry(self):
         rv = Node.scry(self)
@@ -2085,10 +2040,7 @@ class UserStatement(Node):
 
     def can_warp(self):
 
-        if self.call("warp"):
-            return True
-
-        return False
+        return bool(self.call("warp"))
 
 
 class PostUserStatement(Node):
@@ -2112,7 +2064,7 @@ class PostUserStatement(Node):
 
     def execute(self):
         next_node(self.next)
-        statement_name("post " + self.parent.get_name())
+        statement_name(f'post {self.parent.get_name()}')
 
         self.parent.call("post_execute")
 
@@ -2187,11 +2139,7 @@ class Define(Node):
         self.store = store
         self.varname = name
 
-        if index is not None:
-            self.index = PyCode(index, loc=loc, mode='eval')
-        else:
-            self.index = None
-
+        self.index = PyCode(index, loc=loc, mode='eval') if index is not None else None
         self.operator = operator
         self.code = PyCode(expr, loc=loc, mode='eval')
 
@@ -2222,12 +2170,19 @@ class Define(Node):
         if self.store == 'store':
             renpy.dump.definitions.append((self.varname, self.filename, self.linenumber))
         else:
-            renpy.dump.definitions.append((self.store[6:] + "." + self.varname, self.filename, self.linenumber))
+            renpy.dump.definitions.append(
+                (
+                    f'{self.store[6:]}.{self.varname}',
+                    self.filename,
+                    self.linenumber,
+                )
+            )
+
 
         if self.operator == "=" and self.index is None:
             ns, _special = get_namespace(self.store)
             if getattr(ns, "pure", True):
-                renpy.exports.pure(self.store + "." + self.varname)
+                renpy.exports.pure(f'{self.store}.{self.varname}')
 
         self.set()
 
@@ -2330,7 +2285,13 @@ class Default(Node):
         if self.store == 'store':
             renpy.dump.definitions.append((self.varname, self.filename, self.linenumber))
         else:
-            renpy.dump.definitions.append((self.store[6:] + "." + self.varname, self.filename, self.linenumber))
+            renpy.dump.definitions.append(
+                (
+                    f'{self.store[6:]}.{self.varname}',
+                    self.filename,
+                    self.linenumber,
+                )
+            )
 
     def set_default(self, start):
         d = renpy.python.store_dicts[self.store]
@@ -2350,10 +2311,8 @@ class Default(Node):
 
             defaults_set.add(self.varname)
 
-        else:
-
-            if start and renpy.config.developer:
-                raise Exception("{}.{} is being given a default a second time.".format(self.store, self.varname))
+        elif start and renpy.config.developer:
+            raise Exception("{}.{} is being given a default a second time.".format(self.store, self.varname))
 
     def report_traceback(self, name, last):
         return [ (self.filename, self.linenumber, name, None) ]

@@ -30,7 +30,7 @@ def prefixed_matrix(prefix):
     Returns a matrix where each entry is of the for prefix___name.
     """
 
-    return Matrix(4, 4, [ symbols(prefix + "___" + i) for i in matrix_names ])
+    return Matrix(4, 4, [symbols(f'{prefix}___{i}') for i in matrix_names])
 
 ###############################################################################
 
@@ -58,16 +58,24 @@ class Generator(object):
 
         # PYD.
         print("    @staticmethod", file=self.pyd_f)
-        print("    cdef Matrix c{}({})".format(
-            self.name,
-            ", ".join("float " + i for i in params.split())), file=self.pyd_f)
+        print(
+            "    cdef Matrix c{}({})".format(
+                self.name, ", ".join(f'float {i}' for i in params.split())
+            ),
+            file=self.pyd_f,
+        )
+
 
         # PYX.
 
         print("    @staticmethod", file=self.pyx_f)
-        print("    cdef Matrix c{}({}):".format(
-            self.name,
-            ", ".join("float " + i for i in params.split())), file=self.pyx_f)
+        print(
+            "    cdef Matrix c{}({}):".format(
+                self.name, ", ".join(f'float {i}' for i in params.split())
+            ),
+            file=self.pyx_f,
+        )
+
         print("        return {}_matrix({})".format(
             self.name, ", ".join(params.split())), file=self.pyx_f)
 
@@ -89,9 +97,13 @@ class Generator(object):
         print(file=self.f)
         print(file=self.f)
 
-        print("cpdef Matrix {}_matrix({}):".format(
-            self.name,
-            ", ".join("float " + i for i in params.split())), file=self.f)
+        print(
+            "cpdef Matrix {}_matrix({}):".format(
+                self.name, ", ".join(f'float {i}' for i in params.split())
+            ),
+            file=self.f,
+        )
+
 
         if params.split():
             return symbols(params)

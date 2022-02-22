@@ -349,20 +349,13 @@ class Context(renpy.object.Object):
 
         store = renpy.store.__dict__
 
-        if context:
-            index = 0
-        else:
-            index = -1
-
+        index = 0 if context else -1
         for i in names:
 
             if i in self.dynamic_stack[index]:
                 continue
 
-            if i in store:
-                self.dynamic_stack[index][i] = store[i]
-            else:
-                self.dynamic_stack[index][i] = Delete()
+            self.dynamic_stack[index][i] = store[i] if i in store else Delete()
 
     def pop_dynamic(self):
         """
@@ -397,7 +390,7 @@ class Context(renpy.object.Object):
         for dynamic in reversed(self.dynamic_stack):
 
             for k, v in dynamic.items():
-                name = "store." + k
+                name = f'store.{k}'
 
                 if isinstance(v, Delete) and (name in roots):
                     del roots[name]
@@ -592,9 +585,10 @@ class Context(renpy.object.Object):
                         elif renpy.config.exception_handler is not None:
                             handled = renpy.config.exception_handler(short, full, traceback_fn)
 
-                        if not handled:
-                            if renpy.display.error.report_exception(short, full, traceback_fn):
-                                raise
+                        if not handled and renpy.display.error.report_exception(
+                            short, full, traceback_fn
+                        ):
+                            raise
                     except renpy.game.CONTROL_EXCEPTIONS as ce:
                         raise ce
                     except Exception as ce:
@@ -610,9 +604,9 @@ class Context(renpy.object.Object):
 
                 if e.from_current:
                     return_site = getattr(node, "statement_start", node).name
+                elif self.next_node is None:
+                    raise Exception("renpy.call can't be used when the next node is undefined.")
                 else:
-                    if self.next_node is None:
-                        raise Exception("renpy.call can't be used when the next node is undefined.")
                     return_site = self.next_node.name
 
                 node = self.call(e.label, return_site=return_site)
@@ -817,7 +811,7 @@ class Context(renpy.object.Object):
             seen.add(node)
 
         # Predict statements.
-        for i in range(0, renpy.config.predict_statements):
+        for i in range(renpy.config.predict_statements):
 
             if i >= len(nodes):
                 break
@@ -866,11 +860,7 @@ class Context(renpy.object.Object):
         if not self.current:
             return False
 
-        if ever:
-            seen = renpy.game.persistent._seen_ever # type: ignore
-        else:
-            seen = renpy.game.seen_session
-
+        seen = renpy.game.persistent._seen_ever if ever else renpy.game.seen_session
         return self.current in seen
 
     def do_deferred_rollback(self):

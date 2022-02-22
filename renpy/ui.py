@@ -418,7 +418,7 @@ def combine_style(style_prefix, style_suffix):
     if style_prefix is None:
         new_style = style_suffix
     else:
-        new_style = style_prefix + "_" + style_suffix
+        new_style = f'{style_prefix}_{style_suffix}'
 
     return renpy.style.get_style(new_style) # @UndefinedVariable
 
@@ -439,10 +439,7 @@ screen = None # type: renpy.display.screen.ScreenDisplayable|None
 class Wrapper(renpy.object.Object):
 
     def __reduce__(self):
-        if PY2:
-            return bytes(self.name) # type: ignore
-        else:
-            return self.name
+        return bytes(self.name) if PY2 else self.name
 
     def __init__(self, function, one=False, many=False, imagemap=False, replaces=False, style=None, **kwargs):
 
@@ -526,10 +523,11 @@ class Wrapper(renpy.object.Object):
         try:
             w = self.function(*args, **keyword)
         except TypeError as e:
-            etype, e, tb = sys.exc_info(); etype
+            etype, e, tb = sys.exc_info()
+            etype
 
             if tb.tb_next is None:
-                e.args = (e.args[0].replace("__call__", "ui." + self.name),) # type: ignore
+                e.args = (e.args[0].replace("__call__", f'ui.{self.name}'), )
 
             del tb # Important! Prevents memory leaks via our frame.
             raise
@@ -570,11 +568,7 @@ class Wrapper(renpy.object.Object):
             if isinstance(atw, renpy.display.motion.Transform):
                 screen.transforms[widget_id] = atw
 
-                if old_transfers:
-                    oldt = screen.old_transforms.get(widget_id, None)
-                else:
-                    oldt = None
-
+                oldt = screen.old_transforms.get(widget_id, None) if old_transfers else None
                 atw.take_state(oldt)
                 atw.take_execution_state(oldt)
 
@@ -703,10 +697,7 @@ class ChoiceActionBase(Action):
 
     @property
     def chosen(self):
-        if not self.location:
-            return None
-
-        return renpy.game.persistent._chosen # type: ignore
+        return None if not self.location else renpy.game.persistent._chosen
 
     def get_chosen(self):
         if self.chosen is None:
@@ -976,9 +967,8 @@ def _textbutton(label, clicked=None, style=None, text_style=None, substitute=Tru
 
     # Deal with potentially bad keyword arguments. (We'd get these if the user
     # writes text_align instead of text_text_align.)
-    if "align" in text_kwargs:
-        if isinstance(text_kwargs["align"], float):
-            text_kwargs.pop("align")
+    if "align" in text_kwargs and isinstance(text_kwargs["align"], float):
+        text_kwargs.pop("align")
     text_kwargs.pop("y_fudge", None)
 
     if style is None:
@@ -1027,37 +1017,27 @@ def _bar(*args, **properties):
         width, height, range, value = args # @ReservedAssignment
     if len(args) == 2:
         range, value = args # @ReservedAssignment
-        width = None
-        height = None
     else:
         range = 1 # @ReservedAssignment
         value = 0
-        width = None
-        height = None
-
-    if "width" in properties:
-        width = properties.pop("width")
-
-    if "height" in properties:
-        height = properties.pop("height")
-
+    width = properties.pop("width") if "width" in properties else None
+    height = properties.pop("height") if "height" in properties else None
     if "range" in properties:
         range = properties.pop("range") # @ReservedAssignment
 
     if "value" in properties:
         value = properties.pop("value")
 
-    if "style" not in properties:
-        if isinstance(value, BarValue):
-            if properties["vertical"]:
-                style = value.get_style()[1]
-            else:
-                style = value.get_style()[0]
+    if "style" not in properties and isinstance(value, BarValue):
+        if properties["vertical"]:
+            style = value.get_style()[1]
+        else:
+            style = value.get_style()[0]
 
-            if isinstance(style, basestring):
-                style = prefixed_style(style)
+        if isinstance(style, basestring):
+            style = prefixed_style(style)
 
-            properties["style"] = style
+        properties["style"] = style
 
     return renpy.display.behavior.Bar(range, value, width, height, **properties)
 
@@ -1134,8 +1114,16 @@ def viewport_common(vpfunc, _spacing_to_side, scrollbars=None, **properties):
         vscrollbar_properties.setdefault("style", "vscrollbar")
 
     alt = viewport_properties.get("alt", "viewport")
-    scrollbar_properties.setdefault("alt", renpy.minstore.__(alt) + " " + renpy.minstore.__("horizontal scroll"))
-    vscrollbar_properties.setdefault("alt", renpy.minstore.__(alt) + " " + renpy.minstore.__("vertical scroll"))
+    scrollbar_properties.setdefault(
+        "alt",
+        f'{renpy.minstore.__(alt)} ' + renpy.minstore.__("horizontal scroll"),
+    )
+
+    vscrollbar_properties.setdefault(
+        "alt",
+        f'{renpy.minstore.__(alt)} ' + renpy.minstore.__("vertical scroll"),
+    )
+
 
     if scrollbars == "vertical":
 
@@ -1148,12 +1136,6 @@ def viewport_common(vpfunc, _spacing_to_side, scrollbars=None, **properties):
         addable = stack.pop()
 
         vscrollbar(adjustment=rv.yadjustment, **vscrollbar_properties)
-        close()
-
-        stack.append(addable)
-
-        return rv
-
     elif scrollbars == "horizontal":
 
         if renpy.config.scrollbar_child_size:
@@ -1165,12 +1147,6 @@ def viewport_common(vpfunc, _spacing_to_side, scrollbars=None, **properties):
         addable = stack.pop()
 
         scrollbar(adjustment=rv.xadjustment, **scrollbar_properties)
-        close()
-
-        stack.append(addable)
-
-        return rv
-
     else:
 
         if renpy.config.scrollbar_child_size:
@@ -1183,11 +1159,12 @@ def viewport_common(vpfunc, _spacing_to_side, scrollbars=None, **properties):
 
         vscrollbar(adjustment=rv.yadjustment, **vscrollbar_properties)
         scrollbar(adjustment=rv.xadjustment, **scrollbar_properties)
-        close()
 
-        stack.append(addable)
+    close()
 
-        return rv
+    stack.append(addable)
+
+    return rv
 
 
 def viewport(**properties):
@@ -1323,11 +1300,7 @@ def _hotspot(spot, style='hotspot', **properties):
     properties.setdefault("yminimum", h)
     properties.setdefault("ymaximum", h)
 
-    if imagemap.alpha:
-        focus_mask = True
-    else:
-        focus_mask = None
-
+    focus_mask = True if imagemap.alpha else None
     properties.setdefault("focus_mask", focus_mask)
 
     return renpy.display.behavior.Button(

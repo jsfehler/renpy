@@ -46,7 +46,7 @@ generate_styles.generate()
 
 # If RENPY_CC or RENPY_LD are in the environment, and CC or LD are not, use them.
 def setup_env(name):
-    renpy_name = "RENPY_" + name
+    renpy_name = f'RENPY_{name}'
     if (renpy_name in os.environ) and (name not in os.environ):
         os.environ[name] = os.environ[renpy_name]
 
@@ -138,14 +138,13 @@ renpybidicore.c
 cython(
     "_renpybidi",
     FRIBIDI_SOURCES,
-    includes=[
-        BASE + "/fribidi-src/",
-        BASE + "/fribidi-src/lib/",
-        ],
+    includes=[f'{BASE}/fribidi-src/', f'{BASE}/fribidi-src/lib/'],
     define_macros=[
         ("FRIBIDI_ENTRY", ""),
         ("HAVE_CONFIG_H", "1"),
-        ])
+    ],
+)
+
 
 cython("_renpysteam", language="c++", compile_if=steam_sdk, libs=["steam_api"])
 

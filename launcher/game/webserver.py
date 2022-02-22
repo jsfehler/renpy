@@ -34,8 +34,7 @@ class WebHandler(http.server.BaseHTTPRequestHandler):
 
     def do_GET(self):
         """Serve a GET request."""
-        f = self.send_head()
-        if f:
+        if f := self.send_head():
             try:
                 self.copyfile(f, self.wfile)
             finally:
@@ -43,8 +42,7 @@ class WebHandler(http.server.BaseHTTPRequestHandler):
 
     def do_HEAD(self):
         """Serve a HEAD request."""
-        f = self.send_head()
-        if f:
+        if f := self.send_head():
             f.close()
 
     def send_head(self):
@@ -65,8 +63,7 @@ class WebHandler(http.server.BaseHTTPRequestHandler):
             if not parts.path.endswith('/'):
                 # redirect browser - doing basically what apache does
                 self.send_response(301)
-                new_parts = (parts[0], parts[1], parts[2] + '/',
-                             parts[3], parts[4])
+                new_parts = parts[0], parts[1], f'{parts[2]}/', parts[3], parts[4]
                 new_url = urllib.parse.urlunsplit(new_parts)
                 self.send_header("Location", new_url)
                 self.end_headers()
@@ -128,11 +125,11 @@ class WebHandler(http.server.BaseHTTPRequestHandler):
             displayname = linkname = name
             # Append / for directories or @ for symbolic links
             if os.path.isdir(fullname):
-                displayname = name + "/"
-                linkname = name + "/"
+                displayname = f'{name}/'
+                linkname = f'{name}/'
             if os.path.islink(fullname):
-                displayname = name + "@"
-                # Note: a link to a directory displays with @ and links with /
+                displayname = f'{name}@'
+                        # Note: a link to a directory displays with @ and links with /
             f.write('<li><a href="%s">%s</a>\n'
                     % (urllib.parse.quote(linkname), cgi.escape(displayname)))
         f.write("</ul>\n<hr>\n</body>\n</html>\n")

@@ -70,15 +70,13 @@ class GuiParameters(object):
             self.idle_color = Color("#aaaaaa")
             self.idle_small_color = Color("#888888")
             self.text_color = Color("#404040")
-            self.choice_color = Color("#cccccc")
-
         else:
 
             self.selected_color = Color("#ffffff")
             self.idle_color = Color("#888888")
             self.idle_small_color = Color("#aaaaaa")
             self.text_color = Color("#ffffff")
-            self.choice_color = Color("#cccccc")
+        self.choice_color = Color("#cccccc")
 
         self.insensitive_color = self.idle_color.replace_opacity(.5)
 
@@ -106,4 +104,4 @@ class GuiParameters(object):
 
         self.simple_name = simple_name
 
-        self.savedir = self.simple_name + "-" + str(int(time.time()))
+        self.savedir = f'{self.simple_name}-{int(time.time())}'

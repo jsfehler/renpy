@@ -85,7 +85,7 @@ class DialogueTextTags(object):
                     self.text += quoted
                     continue
 
-                if tag == "p" or tag == "w":
+                if tag in ["p", "w"]:
                     if not less_pauses:
                         self.pause_start.append(len(self.text))
                         self.pause_end.append(len(self.text))
@@ -394,11 +394,7 @@ class SlowDone(object):
 
             if renpy.display.screen.has_screen("ctc"):
 
-                if self.ctc:
-                    args = [ self.ctc ]
-                else:
-                    args = [ ]
-
+                args = [ self.ctc ] if self.ctc else [ ]
                 renpy.display.screen.show_screen("ctc", *args, _transient=True, _ignore_extra_kwargs=True, **self.ctc_kwargs)
                 renpy.exports.restart_interaction()
 

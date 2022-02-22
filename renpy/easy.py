@@ -161,9 +161,12 @@ def dynamic_image(d, scope=None, prefix=None, search=None): # type: (Any, dict|N
         if lookup_displayable_prefix(name):
             return True
 
-        if (len(d) == 1) and (renpy.config.missing_image_callback is not None):
-            if renpy.config.missing_image_callback(name):
-                return True
+        if (
+            (len(d) == 1)
+            and (renpy.config.missing_image_callback is not None)
+            and renpy.config.missing_image_callback(name)
+        ):
+            return True
 
     for i in d:
 
@@ -238,10 +241,7 @@ def split_properties(properties, *prefixes):
         text_properties, button_properties = renpy.split_properties(properties, "text_", "")
     """
 
-    rv = [ ]
-
-    for _i in prefixes:
-        rv.append({})
+    rv = [{} for _i in prefixes]
 
     if not properties:
         return rv

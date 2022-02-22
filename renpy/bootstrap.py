@@ -92,11 +92,7 @@ def enable_trace(level):
 
     trace_file = open("trace.txt", "w", buffering=1, encoding="utf-8")
 
-    if level > 1:
-        trace_local = trace_function
-    else:
-        trace_local = None
-
+    trace_local = trace_function if level > 1 else None
     sys.settrace(trace_function)
 
 
@@ -105,7 +101,7 @@ def mac_start(fn):
     os.start compatibility for mac.
     """
 
-    os.system("open " + fn) # type: ignore
+    os.system(f'open {fn}')
 
 def popen_del(self, *args, **kwargs):
     """

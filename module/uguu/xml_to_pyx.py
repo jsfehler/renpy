@@ -81,7 +81,7 @@ def python_type(t):
     Converts the OpenGL type t into a Python type.
     """
 
-    if not "*" in t:
+    if "*" not in t:
         return t
 
     print("Weird type", t)
@@ -103,10 +103,11 @@ class Command:
         self.aliases = set()
 
     def format_param_list(self):
-        l = [ ]
+        l = [
+            f"{type_} {name}"
+            for name, type_ in zip(self.parameters, self.parameter_types)
+        ]
 
-        for name, type_ in zip(self.parameters, self.parameter_types):
-            l.append(f"{type_} {name}")
 
         return "(" + ", ".join(l) + ")"
 
@@ -214,9 +215,7 @@ class XMLToPYX:
 
         names = [ name ]
 
-        for i in node.findall("alias"):
-            names.append(i.attrib["name"])
-
+        names.extend(i.attrib["name"] for i in node.findall("alias"))
         for i in names:
             c = self.commands.get(i, None)
             if c is not None:

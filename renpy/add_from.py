@@ -54,12 +54,8 @@ def generate_label(target):
     n = 0
 
     while True:
-        if n:
-            label = "_call_{}_{}".format(target, n)
-        else:
-            label = "_call_{}".format(target)
-
-        if not renpy.exports.has_label(label) and not (label in new_labels):
+        label = "_call_{}_{}".format(target, n) if n else "_call_{}".format(target)
+        if not renpy.exports.has_label(label) and label not in new_labels:
             break
 
         n += 1
@@ -96,16 +92,16 @@ def process_file(fn):
 
     output += data[consumed:]
 
-    with open(fn + ".new", "wb") as f:
+    with open(f'{fn}.new', "wb") as f:
         f.write(output.encode("utf-8"))
 
     try:
-        os.unlink(fn + ".bak")
+        os.unlink(f'{fn}.bak')
     except Exception:
         pass
 
-    os.rename(fn, fn + ".bak")
-    os.rename(fn + ".new", fn)
+    os.rename(fn, f'{fn}.bak')
+    os.rename(f'{fn}.new', fn)
 
 
 def add_from():
